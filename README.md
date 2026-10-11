@@ -9,6 +9,18 @@ An automated daily puzzle generator producing e-ink formatted 3-page PDFs for th
 - **3-Page Structure**: Page 1 (The Puzzle), Page 2 (Spoiler Blocker), Page 3 (The Answer Key).
 - **Daily Inbox & Archive Workflow**: Automated daily puzzles arrive fresh in `/Puzzles/Daily/`. Solved puzzles can be moved into pre-created `/Puzzles/Archive/` folders.
 - **Dual Trigger**: Daily GitHub Actions schedule + On-Demand Android HTTP webhook.
+- **Mobile PWA Studio**: Touch-friendly web app on GitHub Pages with visual 9x9 Sudoku grid, conflict validation, and 1-tap tablet delivery.
+
+## 📱 Mobile PWA Puzzle Studio
+Access the live Progressive Web App on your mobile device:  
+👉 **[https://marlou-lopez.github.io/pen-to-paper/](https://marlou-lopez.github.io/pen-to-paper/)**
+
+*(Add to Home Screen on iOS/Android for a fullscreen native app experience!)*
+
+- **Sudoku Studio**: 9x9 visual interactive grid with on-screen number pad (1–9, Clear), auto-advance cursor, instant duplicate conflict detection in red, and built-in solver verification.
+- **Word Search Studio**: Pick from 15 curated preset themes or type your own custom theme.
+- **Daily Bundle**: 1-tap trigger to deliver today's morning puzzle pack.
+- **1-Tap Delivery**: Sends directly to your reMarkable tablet via GitHub Actions with real-time status tracking.
 
 ## Tablet Folder Structure & Archive Workflow
 
