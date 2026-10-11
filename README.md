@@ -1,21 +1,63 @@
 # Pen to Paper: reMarkable Puzzle Generator
 
-An automated daily puzzle generator producing e-ink formatted 3-page PDFs for the reMarkable tablet, syncing directly to `/Puzzles/Word Search/` and `/Puzzles/Sudoku/`.
+An automated daily puzzle generator producing e-ink formatted 3-page PDFs for the reMarkable tablet, syncing daily puzzles directly to `/Puzzles/Daily/` and providing organized tablet archives.
 
 ## Features
 - **Word Search**: 15x15 grids using curated offline themes (Astronomy, Ocean Life, History, etc.).
 - **Sudoku**: 9x9 grids with difficulty settings (`random`, `easy`, `medium`, `hard`, `expert`) that rotate automatically or can be specified on-demand.
 - **E-Ink Optimized Layout**: 1404x1872 pt (3:4 aspect ratio) with high-contrast monochrome design and generous margins.
 - **3-Page Structure**: Page 1 (The Puzzle), Page 2 (Spoiler Blocker), Page 3 (The Answer Key).
+- **Daily Inbox & Archive Workflow**: Automated daily puzzles arrive fresh in `/Puzzles/Daily/`. Solved puzzles can be moved into pre-created `/Puzzles/Archive/` folders.
 - **Dual Trigger**: Daily GitHub Actions schedule + On-Demand Android HTTP webhook.
 
-## Local Development
+## Tablet Folder Structure & Archive Workflow
+
+Automated puzzles are delivered to a daily inbox so you always know what's fresh:
+
+```text
+/Puzzles/
+├── Daily/                          # Active inbox: automated daily scheduled puzzles
+│   ├── WordSearch_YYYY-MM-DD_<Theme>.pdf
+│   └── Sudoku_<Difficulty>_YYYY-MM-DD.pdf
+├── Word Search/                    # Category folder for on-demand manual generations
+├── Sudoku/                         # Category folder for on-demand manual generations
+└── Archive/                        # Pre-created archive destinations for solved puzzles
+    ├── Word Search/
+    └── Sudoku/
+```
+
+**Daily Workflow**:
+1. Every morning, new puzzles arrive in `/Puzzles/Daily/`.
+2. Solve the puzzles on your reMarkable tablet.
+3. Move completed puzzles to `/Puzzles/Archive/Word Search/` or `/Puzzles/Archive/Sudoku/` to keep your inbox clean.
+4. On-demand manual generations deliver directly to their category folders (`/Puzzles/Word Search/` and `/Puzzles/Sudoku/`) by default, or to `/Puzzles/Daily/` when `--daily` is specified.
+
+## Local Development & CLI Usage
+
 ```bash
 npm install
 npm test
+
 # Generate puzzles locally to ./output/ for preview:
 npm run generate -- --type=all --difficulty=medium
+
+# Route to daily inbox:
+npm run generate -- --daily
+
+# Custom target folder override:
+npm run generate -- --type=sudoku --folder="/Puzzles/Custom"
+
+# Generate and upload to tablet:
+npm run generate -- --daily --upload
 ```
+
+### CLI Options
+- `--type=<type>`: Puzzle type to generate (`all`, `word-search`, `sudoku`). Default: `all`.
+- `--difficulty=<diff>`: Sudoku difficulty (`random`, `easy`, `medium`, `hard`, `expert`). Default: `random`.
+- `--theme=<theme>`: Word Search theme (optional; dynamic rotation if omitted).
+- `--daily`: Route puzzles to the `/Puzzles/Daily` inbox folder.
+- `--folder=<path>`: Custom folder destination override (takes precedence over `--daily`).
+- `--upload`: Upload directly to reMarkable via `rmapi` instead of local storage.
 
 ## Cloud Setup (reMarkable)
 1. Generate an authentication code at [my.remarkable.com/device/desktop/connect](https://my.remarkable.com/device/desktop/connect).
@@ -41,7 +83,8 @@ Use the **HTTP Request Shortcuts** Android app:
     "ref": "main",
     "inputs": {
       "puzzle_type": "all",
-      "sudoku_difficulty": "random"
+      "sudoku_difficulty": "random",
+      "is_daily": true
     }
   }
   ```

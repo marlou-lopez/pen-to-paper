@@ -31,6 +31,11 @@ on:
         required: false
         default: ''
         type: string
+      is_daily:
+        description: 'Deliver to /Puzzles/Daily (true) or Category folders (false)'
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   generate-and-upload:
@@ -75,8 +80,15 @@ jobs:
           if [ -n "$THEME_PARAM" ]; then
             THEME_FLAG="--theme=$THEME_PARAM"
           fi
+
+          DAILY_FLAG=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.is_daily }}" != "false" ]; then
+            DAILY_FLAG="--daily"
+          fi
+
           npm run generate -- \
             --type=${{ inputs.puzzle_type || 'all' }} \
             --difficulty=${{ inputs.sudoku_difficulty || 'random' }} \
             $THEME_FLAG \
+            $DAILY_FLAG \
             --upload
