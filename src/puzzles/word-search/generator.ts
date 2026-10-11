@@ -3,6 +3,7 @@ import WordSearch from '@blex41/word-search';
 import { GeneratedPuzzle, PuzzleGenerator, PuzzleMetadata } from '../../core/types.js';
 import { WORD_THEMES, WordTheme } from './word-bank.js';
 import { renderWordSearchPdf } from './renderer.js';
+import { getDynamicWordTheme } from './theme-fetcher.js';
 
 export interface WordSearchOptions {
   date?: string;
@@ -30,9 +31,10 @@ export class WordSearchGenerator implements PuzzleGenerator<WordSearchOptions, W
 
   async generate(options?: WordSearchOptions): Promise<GeneratedPuzzle<WordSearchData>> {
     const dateStr = options?.date ?? new Date().toISOString().slice(0, 10);
-    const themeObj: WordTheme = options?.theme
-      ? WORD_THEMES.find((t) => t.name.toLowerCase() === options.theme?.toLowerCase()) || WORD_THEMES[0]
-      : WORD_THEMES[Math.floor(Math.random() * WORD_THEMES.length)];
+    const themeObj: WordTheme = await getDynamicWordTheme({
+      date: dateStr,
+      theme: options?.theme,
+    });
 
     let ws: any;
     let attempts = 0;

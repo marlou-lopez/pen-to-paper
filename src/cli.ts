@@ -15,6 +15,8 @@ function parseArgs(): RunOptions {
       options.type = arg.slice(arg.indexOf('=') + 1) as any;
     } else if (arg.startsWith('--difficulty=')) {
       options.difficulty = arg.slice(arg.indexOf('=') + 1);
+    } else if (arg.startsWith('--theme=')) {
+      options.theme = arg.slice(arg.indexOf('=') + 1);
     } else if (arg.startsWith('--date=')) {
       options.date = arg.slice(arg.indexOf('=') + 1);
     } else if (arg.startsWith('--dest=')) {

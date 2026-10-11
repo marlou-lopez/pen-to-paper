@@ -26,6 +26,11 @@ on:
           - medium
           - hard
           - expert
+      word_search_theme:
+        description: 'Word Search theme (optional; blank for dynamic)'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   generate-and-upload:
@@ -61,7 +66,13 @@ jobs:
 
       - name: Run puzzle generation & upload
         run: |
+          THEME_PARAM="${{ inputs.word_search_theme }}"
+          THEME_FLAG=""
+          if [ -n "$THEME_PARAM" ]; then
+            THEME_FLAG="--theme=$THEME_PARAM"
+          fi
           npm run generate -- \
             --type=${{ inputs.puzzle_type || 'all' }} \
             --difficulty=${{ inputs.sudoku_difficulty || 'random' }} \
+            $THEME_FLAG \
             --upload

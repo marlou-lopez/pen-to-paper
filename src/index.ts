@@ -9,6 +9,7 @@ import { GeneratedPuzzle } from './core/types.js';
 export interface RunOptions {
   type?: 'all' | 'word-search' | 'sudoku';
   difficulty?: string;
+  theme?: string;
   date?: string;
   upload?: boolean;
   outputDir?: string;
@@ -55,6 +56,7 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
     const puzzle = await gen.generate({
       date: options.date,
       difficulty: options.difficulty,
+      theme: options.theme,
     });
 
     console.log(`Rendering PDF for ${puzzle.title}...`);
