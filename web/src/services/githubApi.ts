@@ -121,7 +121,7 @@ export async function dispatchWorkflow(opts: DispatchOptions): Promise<void> {
       sudoku_difficulty: opts.inputs.sudoku_difficulty || 'random',
       sudoku_grid: opts.inputs.sudoku_grid || '',
       word_search_theme: opts.inputs.word_search_theme || '',
-      is_daily: opts.inputs.is_daily !== false,
+      is_daily: String(opts.inputs.is_daily !== false),
     },
   };
 
@@ -197,20 +197,18 @@ export async function pollWorkflowRun(
         currentRun = data.workflow_runs.find((r) => r.id === runId);
       } else {
         // Find run created right around or after our dispatch
-        // allow 30 second clock drift
-        const targetRuns = data.workflow_runs.filter(
-          (r) => new Date(r.created_at).getTime() >= startTime - 30000
-        );
+        // Filter out completed runs that were created before our dispatch to avoid matching previous executions
+        const targetRuns = data.workflow_runs.filter((r) => {
+          const runTime = new Date(r.created_at).getTime();
+          if (r.status === 'completed' && runTime <= startTime) {
+            return false;
+          }
+          return runTime >= startTime - 15000;
+        });
+
         if (targetRuns.length > 0) {
           currentRun = targetRuns[0];
           runId = currentRun.id;
-        } else {
-          // If none match strictly, check the very latest run
-          const latest = data.workflow_runs[0];
-          if (new Date(latest.created_at).getTime() >= startTime - 60000) {
-            currentRun = latest;
-            runId = latest.id;
-          }
         }
       }
 
