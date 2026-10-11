@@ -1,0 +1,18 @@
+export interface PuzzleMetadata {
+  id: string;
+  displayName: string;
+  targetFolder: string;
+}
+
+export interface GeneratedPuzzle<TData = unknown> {
+  metadata: PuzzleMetadata;
+  title: string;
+  filename: string;
+  puzzleData: TData;
+}
+
+export interface PuzzleGenerator<TOptions = unknown, TData = unknown> {
+  readonly metadata: PuzzleMetadata;
+  generate(options?: TOptions): Promise<GeneratedPuzzle<TData>>;
+  renderPdf(puzzle: GeneratedPuzzle<TData>): Promise<Buffer>;
+}

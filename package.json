@@ -1,0 +1,23 @@
+{
+  "name": "pen-to-paper",
+  "version": "1.0.0",
+  "description": "Daily e-ink puzzle generator for reMarkable tablet",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "generate": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@blex41/word-search": "^1.2.0",
+    "pdfkit": "^0.15.0",
+    "sudoku-gen": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/pdfkit": "^0.13.4",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.1"
+  }
+}
