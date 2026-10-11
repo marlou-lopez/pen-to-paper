@@ -30,6 +30,8 @@ on:
 jobs:
   generate-and-upload:
     runs-on: ubuntu-latest
+    env:
+      RMAPI_AUTH_TOKEN: ${{ secrets.RMAPI_AUTH_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,16 +53,13 @@ jobs:
           echo "$HOME/bin" >> $GITHUB_PATH
 
       - name: Setup rmapi auth
-        if: "${{ env.RMAPI_AUTH_TOKEN != '' }}"
-        env:
-          RMAPI_AUTH_TOKEN: ${{ secrets.RMAPI_AUTH_TOKEN }}
+        if: "${{ secrets.RMAPI_AUTH_TOKEN != '' }}"
         run: |
           mkdir -p ~/.config/rmapi
           echo "$RMAPI_AUTH_TOKEN" > ~/.rmapi
+          echo "$RMAPI_AUTH_TOKEN" > ~/.config/rmapi/rmapi.conf
 
       - name: Run puzzle generation & upload
-        env:
-          RMAPI_AUTH_TOKEN: ${{ secrets.RMAPI_AUTH_TOKEN }}
         run: |
           npm run generate -- \
             --type=${{ inputs.puzzle_type || 'all' }} \
