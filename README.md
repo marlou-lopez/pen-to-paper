@@ -19,8 +19,14 @@ npm run generate -- --type=all --difficulty=medium
 
 ## Cloud Setup (reMarkable)
 1. Generate an authentication code at [my.remarkable.com/device/desktop/connect](https://my.remarkable.com/device/desktop/connect).
-2. Authenticate `rmapi` locally once to obtain your token file (`~/.rmapi`).
-3. Copy the token into your GitHub repository secrets as `RMAPI_AUTH_TOKEN`.
+2. Authenticate `rmapi` locally once. On macOS, this creates `~/Library/Application Support/rmapi/rmapi.conf` (or `~/.rmapi` / `~/.config/rmapi/rmapi.conf` on Linux).
+3. Upload the token into your GitHub repository secrets:
+   ```bash
+   # On macOS:
+   gh secret set RMAPI_AUTH_TOKEN < "$HOME/Library/Application Support/rmapi/rmapi.conf"
+   # On Linux:
+   gh secret set RMAPI_AUTH_TOKEN < ~/.rmapi
+   ```
 
 ## Android Trigger Setup
 Use the **HTTP Request Shortcuts** Android app:
