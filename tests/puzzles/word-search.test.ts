@@ -65,4 +65,12 @@ describe('WordSearchGenerator', () => {
       expect(result.puzzleData.grid).toHaveLength(15);
     }
   });
+
+  it('renders valid PDF buffer with enhanced typography sizes', async () => {
+    const generator = new WordSearchGenerator();
+    const puzzle = await generator.generate({ theme: 'Astronomy' });
+    const pdfBuffer = await generator.renderPdf(puzzle);
+    expect(pdfBuffer).toBeInstanceOf(Buffer);
+    expect(pdfBuffer.length).toBeGreaterThan(1000);
+  });
 });

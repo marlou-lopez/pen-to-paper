@@ -30,17 +30,17 @@ export function renderWordSearchPdf(puzzle: GeneratedPuzzle<WordSearchData>): Pr
 
   // Draw Word Checklist (3 columns)
   const checklistY = startY + gridWidth + 40;
-  doc.fontSize(22).font('Helvetica-Bold').fillColor('#000000').text('Words to Find:', PAGE_MARGIN, checklistY);
+  doc.fontSize(24).font('Helvetica-Bold').fillColor('#000000').text('Words to Find:', PAGE_MARGIN, checklistY);
 
   const colWidth = (PAGE_WIDTH - PAGE_MARGIN * 2) / 3;
   const itemsPerCol = Math.ceil(words.length / 3);
-  doc.font('Helvetica').fontSize(18).fillColor('#222222');
+  doc.font('Helvetica').fontSize(22).fillColor('#222222');
 
   words.forEach((word, index) => {
     const col = Math.floor(index / itemsPerCol);
     const row = index % itemsPerCol;
     const x = PAGE_MARGIN + col * colWidth;
-    const y = checklistY + 40 + row * 32;
+    const y = checklistY + 40 + row * 38;
     doc.text(`[  ]  ${word}`, x, y);
   });
 
@@ -112,13 +112,13 @@ export function renderWordSearchPdf(puzzle: GeneratedPuzzle<WordSearchData>): Pr
   });
 
   // Draw Solutions list below the grid on Page 3
-  keyDoc.fontSize(22).font('Helvetica-Bold').fillColor('#000000').text('Solutions:', PAGE_MARGIN, checklistY);
-  keyDoc.font('Helvetica').fontSize(18).fillColor('#222222');
+  keyDoc.fontSize(24).font('Helvetica-Bold').fillColor('#000000').text('Solutions:', PAGE_MARGIN, checklistY);
+  keyDoc.font('Helvetica').fontSize(22).fillColor('#222222');
   words.forEach((word, index) => {
     const col = Math.floor(index / itemsPerCol);
     const row = index % itemsPerCol;
     const x = PAGE_MARGIN + col * colWidth;
-    const y = checklistY + 40 + row * 32;
+    const y = checklistY + 40 + row * 38;
     keyDoc.text(`[X]  ${word}`, x, y);
   });
 
