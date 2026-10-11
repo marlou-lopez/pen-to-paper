@@ -12,13 +12,13 @@ function parseArgs(): RunOptions {
 
   for (const arg of args) {
     if (arg.startsWith('--type=')) {
-      options.type = arg.split('=')[1] as any;
+      options.type = arg.slice(arg.indexOf('=') + 1) as any;
     } else if (arg.startsWith('--difficulty=')) {
-      options.difficulty = arg.split('=')[1];
+      options.difficulty = arg.slice(arg.indexOf('=') + 1);
     } else if (arg.startsWith('--date=')) {
-      options.date = arg.split('=')[1];
+      options.date = arg.slice(arg.indexOf('=') + 1);
     } else if (arg.startsWith('--dest=')) {
-      options.outputDir = arg.split('=')[1];
+      options.outputDir = arg.slice(arg.indexOf('=') + 1);
     } else if (arg === '--upload') {
       options.upload = true;
     }

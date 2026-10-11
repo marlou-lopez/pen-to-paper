@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { WordSearchGenerator } from '../../src/puzzles/word-search/generator.js';
+import { WORD_THEMES } from '../../src/puzzles/word-search/word-bank.js';
 
 describe('WordSearchGenerator', () => {
   it('generates a 15x15 grid with placed words and valid solution coordinates', async () => {
@@ -32,5 +33,36 @@ describe('WordSearchGenerator', () => {
     expect(result.puzzleData.theme).toBe('Ocean Life');
     expect(result.title).toBe('Word Search - Ocean Life');
     expect(result.filename).toBe('WordSearch_2026-10-12_OceanLife.pdf');
+  });
+
+  it('contains and supports all 15 curated themes', async () => {
+    const generator = new WordSearchGenerator();
+    expect(WORD_THEMES).toHaveLength(15);
+
+    const expectedThemes = [
+      'Astronomy',
+      'Ocean Life',
+      'Ancient History',
+      'Inventions',
+      'World Geography',
+      'Chemistry',
+      'Architecture',
+      'Musical Instruments',
+      'Weather & Climate',
+      'Forest Wildlife',
+      'Board Games',
+      'Botany',
+      'Deep Space',
+      'Minerals & Gems',
+      'Aviation',
+    ];
+    expect(WORD_THEMES.map(t => t.name)).toEqual(expectedThemes);
+
+    for (const theme of WORD_THEMES) {
+      const result = await generator.generate({ theme: theme.name, date: '2026-10-11' });
+      expect(result.puzzleData.theme).toBe(theme.name);
+      expect(result.puzzleData.words.length).toBeGreaterThanOrEqual(10);
+      expect(result.puzzleData.grid).toHaveLength(15);
+    }
   });
 });

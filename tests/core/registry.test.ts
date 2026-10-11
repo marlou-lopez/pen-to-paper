@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PuzzleRegistry } from '../../src/core/registry';
-import { PuzzleGenerator, GeneratedPuzzle } from '../../src/core/types';
+import { PuzzleGenerator } from '../../src/core/types';
 
 describe('PuzzleRegistry', () => {
   it('registers and retrieves puzzle generators', () => {

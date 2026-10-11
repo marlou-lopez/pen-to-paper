@@ -39,7 +39,11 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
   }
 
   const rmapi = new RmapiDeliveryClient();
-  const useRmapi = options.upload && rmapi.isAvailable();
+  const rmapiAvailable = rmapi.isAvailable();
+  if (options.upload && !rmapiAvailable) {
+    console.warn('[WARN] --upload requested but rmapi is not available on PATH; falling back to local delivery.');
+  }
+  const useRmapi = Boolean(options.upload && rmapiAvailable);
   const deliveryClient: DeliveryClient = useRmapi
     ? rmapi
     : new LocalDeliveryClient(options.outputDir || './output');

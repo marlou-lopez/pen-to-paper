@@ -34,8 +34,8 @@ describe('Delivery Clients', () => {
   });
 
   it('RmapiDeliveryClient falls back gracefully when rmapi binary is missing', async () => {
-    vi.spyOn(childProcess, 'execSync').mockImplementation((cmd: string) => {
-      if (cmd === 'which rmapi') {
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      if (cmd === 'which' && args?.[0] === 'rmapi') {
         throw new Error('not found');
       }
       return Buffer.from('');
@@ -46,8 +46,8 @@ describe('Delivery Clients', () => {
   });
 
   it('RmapiDeliveryClient throws error on deliver when rmapi binary is missing', async () => {
-    vi.spyOn(childProcess, 'execSync').mockImplementation((cmd: string) => {
-      if (cmd === 'which rmapi') {
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      if (cmd === 'which' && args?.[0] === 'rmapi') {
         throw new Error('not found');
       }
       return Buffer.from('');
@@ -61,9 +61,9 @@ describe('Delivery Clients', () => {
   });
 
   it('RmapiDeliveryClient uploads file and creates remote directories when available', async () => {
-    const execCalls: string[] = [];
-    vi.spyOn(childProcess, 'execSync').mockImplementation((cmd: string) => {
-      execCalls.push(cmd);
+    const execCalls: { cmd: string; args: string[] }[] = [];
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      execCalls.push({ cmd, args: args ?? [] });
       return Buffer.from('');
     });
 
@@ -71,11 +71,25 @@ describe('Delivery Clients', () => {
     expect(client.isAvailable()).toBe(true);
 
     const buffer = Buffer.from('remote-pdf-bytes');
-    const remotePath = await client.deliver('Daily.pdf', '/Puzzles/WordSearch', buffer);
+    const remotePath = await client.deliver('Daily.pdf', '/Puzzles/WordSearch/', buffer);
 
     expect(remotePath).toBe('/Puzzles/WordSearch/Daily.pdf');
-    expect(execCalls).toContain('rmapi mkdir "/Puzzles"');
-    expect(execCalls).toContain('rmapi mkdir "/Puzzles/WordSearch"');
-    expect(execCalls.some(call => call.startsWith('rmapi put ') && call.endsWith('"/Puzzles/WordSearch"'))).toBe(true);
+    expect(execCalls).toContainEqual({
+      cmd: 'rmapi',
+      args: ['mkdir', '/Puzzles'],
+    });
+    expect(execCalls).toContainEqual({
+      cmd: 'rmapi',
+      args: ['mkdir', '/Puzzles/WordSearch'],
+    });
+    expect(
+      execCalls.some(
+        call =>
+          call.cmd === 'rmapi' &&
+          call.args[0] === 'put' &&
+          call.args[1].endsWith('Daily.pdf') &&
+          call.args[2] === '/Puzzles/WordSearch'
+      )
+    ).toBe(true);
   });
 });

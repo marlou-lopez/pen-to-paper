@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterAll, vi } from 'vitest';
 import fs from 'fs/promises';
 import { runGenerator } from '../src/index';
 
@@ -41,5 +41,20 @@ describe('Orchestrator runGenerator', () => {
         outputDir: './test-cli-output',
       })
     ).rejects.toThrow('Unknown puzzle type: non-existent');
+  });
+
+  it('warns when upload is requested but rmapi is not available', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const results = await runGenerator({
+      type: 'sudoku',
+      upload: true,
+      outputDir: './test-cli-output',
+    });
+
+    expect(results).toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[WARN] --upload requested but rmapi is not available on PATH; falling back to local delivery.'
+    );
+    warnSpy.mockRestore();
   });
 });
