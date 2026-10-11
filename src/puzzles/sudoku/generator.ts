@@ -25,7 +25,7 @@ export function resolveSudokuDifficulty(inputDifficulty?: string, dateObj = new 
 
   // Rotating by day of week:
   // 1: Mon (easy), 2: Tue (medium), 3: Wed (medium), 4: Thu (hard), 5: Fri (hard), 6/0: Sat/Sun (expert)
-  const day = dateObj.getDay();
+  const day = dateObj.getUTCDay();
   switch (day) {
     case 1:
       return 'easy';
