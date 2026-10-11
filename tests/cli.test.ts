@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, vi } from 'vitest';
 import fs from 'fs/promises';
 import { runGenerator } from '../src/index';
+import { RmapiDeliveryClient } from '../src/delivery/rmapi-client';
 
 describe('Orchestrator runGenerator', () => {
   afterAll(async () => {
@@ -44,6 +45,7 @@ describe('Orchestrator runGenerator', () => {
   });
 
   it('warns when upload is requested but rmapi is not available', async () => {
+    const isAvailableSpy = vi.spyOn(RmapiDeliveryClient.prototype, 'isAvailable').mockReturnValue(false);
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const results = await runGenerator({
       type: 'sudoku',
@@ -56,5 +58,6 @@ describe('Orchestrator runGenerator', () => {
       '[WARN] --upload requested but rmapi is not available on PATH; falling back to local delivery.'
     );
     warnSpy.mockRestore();
+    isAvailableSpy.mockRestore();
   });
 });

@@ -38,8 +38,8 @@ export class RmapiDeliveryClient implements DeliveryClient {
         }
       }
 
-      // Upload file
-      childProcess.execFileSync('rmapi', ['put', tempFilePath, cleanTargetFolder], { stdio: 'inherit' });
+      // Upload file (use --force to overwrite if file already exists)
+      childProcess.execFileSync('rmapi', ['put', '--force', tempFilePath, cleanTargetFolder], { stdio: 'inherit' });
       return `${cleanTargetFolder}/${filename}`;
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});

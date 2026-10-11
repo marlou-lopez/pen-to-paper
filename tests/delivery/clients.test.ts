@@ -87,8 +87,9 @@ describe('Delivery Clients', () => {
         call =>
           call.cmd === 'rmapi' &&
           call.args[0] === 'put' &&
-          call.args[1].endsWith('Daily.pdf') &&
-          call.args[2] === '/Puzzles/WordSearch'
+          call.args.includes('--force') &&
+          call.args.some(arg => arg.endsWith('Daily.pdf')) &&
+          call.args[call.args.length - 1] === '/Puzzles/WordSearch'
       )
     ).toBe(true);
   });
