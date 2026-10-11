@@ -50,7 +50,7 @@ export function renderWordSearchPdf(puzzle: GeneratedPuzzle<WordSearchData>): Pr
   // Page 3: Answer Key
   builder.addAnswerKeyPage(`Word Search (${theme})`);
 
-  // Draw solution grid with highlighted words
+  // Draw solution grid
   const keyDoc = builder.getDoc();
   keyDoc.rect(startX - 2, startY - 2, gridWidth + 4, gridWidth + 4).lineWidth(3).strokeColor('#000000').stroke();
 
@@ -60,24 +60,67 @@ export function renderWordSearchPdf(puzzle: GeneratedPuzzle<WordSearchData>): Pr
     s.cells.forEach(([r, c]) => solutionCells.add(`${r},${c}`));
   });
 
+  // Draw cells and letters
   for (let r = 0; r < 15; r++) {
     for (let c = 0; c < 15; c++) {
       const cellX = startX + c * cellSize;
       const cellY = startY + r * cellSize;
       const isSolved = solutionCells.has(`${r},${c}`);
 
-      if (isSolved) {
-        keyDoc.rect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4).fillColor('#E0E0E0').fill();
-        keyDoc.rect(cellX, cellY, cellSize, cellSize).lineWidth(1.5).strokeColor('#000000').stroke();
-        keyDoc.font('Helvetica-Bold').fontSize(26).fillColor('#000000');
-      } else {
-        keyDoc.rect(cellX, cellY, cellSize, cellSize).lineWidth(0.5).strokeColor('#CCCCCC').stroke();
-        keyDoc.font('Helvetica').fontSize(22).fillColor('#888888');
-      }
+      keyDoc.rect(cellX, cellY, cellSize, cellSize).lineWidth(0.5).strokeColor('#D0D0D0').stroke();
 
-      keyDoc.text(grid[r][c], cellX, cellY + (isSolved ? 14 : 16), { width: cellSize, align: 'center' });
+      if (isSolved) {
+        keyDoc.font('Helvetica-Bold').fontSize(26).fillColor('#000000');
+        keyDoc.text(grid[r][c], cellX, cellY + 14, { width: cellSize, align: 'center' });
+      } else {
+        keyDoc.font('Helvetica').fontSize(22).fillColor('#888888');
+        keyDoc.text(grid[r][c], cellX, cellY + 16, { width: cellSize, align: 'center' });
+      }
     }
   }
+
+  // Draw rounded pill capsules circling each placed word
+  const pillRadius = cellSize * 0.44;
+  solution.forEach((s) => {
+    if (!s.cells || s.cells.length === 0) return;
+    const first = s.cells[0];
+    const last = s.cells[s.cells.length - 1];
+
+    const p1 = {
+      x: startX + (first[1] + 0.5) * cellSize,
+      y: startY + (first[0] + 0.5) * cellSize,
+    };
+    const p2 = {
+      x: startX + (last[1] + 0.5) * cellSize,
+      y: startY + (last[0] + 0.5) * cellSize,
+    };
+
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+    keyDoc.save();
+    keyDoc.translate(p1.x, p1.y);
+    keyDoc.rotate(angleDeg);
+    keyDoc
+      .roundedRect(-pillRadius, -pillRadius, length + 2 * pillRadius, 2 * pillRadius, pillRadius)
+      .lineWidth(2.5)
+      .strokeColor('#000000')
+      .stroke();
+    keyDoc.restore();
+  });
+
+  // Draw Solutions list below the grid on Page 3
+  keyDoc.fontSize(22).font('Helvetica-Bold').fillColor('#000000').text('Solutions:', PAGE_MARGIN, checklistY);
+  keyDoc.font('Helvetica').fontSize(18).fillColor('#222222');
+  words.forEach((word, index) => {
+    const col = Math.floor(index / itemsPerCol);
+    const row = index % itemsPerCol;
+    const x = PAGE_MARGIN + col * colWidth;
+    const y = checklistY + 40 + row * 32;
+    keyDoc.text(`[X]  ${word}`, x, y);
+  });
 
   return builder.build();
 }
