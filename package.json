@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "generate": "tsx src/cli.ts"
+    "generate": "tsx src/cli.ts",
+    "dev:web": "npm --prefix web run dev",
+    "build:web": "npm --prefix web run build"
   },
   "dependencies": {
     "@blex41/word-search": "^1.2.0",
