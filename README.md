@@ -44,6 +44,9 @@ npm run generate -- --type=all --difficulty=medium
 # Route to daily inbox:
 npm run generate -- --daily
 
+# Generate a custom Sudoku puzzle from grid notation:
+npm run generate -- --grid="53xx7xxxx/6xx195xxx/x98xxxx6x/8xxx6xxx3/4xx8x3xx1/7xxx2xxx6/x6xxxx28x/xxx419xx5/xxxx8xx79"
+
 # Custom target folder override:
 npm run generate -- --type=sudoku --folder="/Puzzles/Custom"
 
@@ -55,6 +58,7 @@ npm run generate -- --daily --upload
 - `--type=<type>`: Puzzle type to generate (`all`, `word-search`, `sudoku`). Default: `all`.
 - `--difficulty=<diff>`: Sudoku difficulty (`random`, `easy`, `medium`, `hard`, `expert`). Default: `random`.
 - `--theme=<theme>`: Word Search theme (optional; dynamic rotation if omitted).
+- `--grid=<notation>`: Custom Sudoku grid string using 9 rows separated by `/` or newlines (`1-9` for clues, `x` for blanks). Automatically generates a solved custom puzzle.
 - `--daily`: Route puzzles to the `/Puzzles/Daily` inbox folder.
 - `--folder=<path>`: Custom folder destination override (takes precedence over `--daily`).
 - `--upload`: Upload directly to reMarkable via `rmapi` instead of local storage.
@@ -77,7 +81,7 @@ Use the **HTTP Request Shortcuts** Android app:
 - **Headers**:
   - `Authorization: Bearer <GITHUB_PAT>`
   - `Accept: application/vnd.github.v3+json`
-- **Body**:
+- **Body (Daily Generation)**:
   ```json
   {
     "ref": "main",
@@ -88,3 +92,18 @@ Use the **HTTP Request Shortcuts** Android app:
     }
   }
   ```
+
+### Custom Sudoku Shortcut
+To transcribe a Sudoku puzzle from a physical book or paper directly to your tablet:
+- **Body**:
+  ```json
+  {
+    "ref": "main",
+    "inputs": {
+      "puzzle_type": "sudoku",
+      "sudoku_grid": "{sudoku_grid}",
+      "is_daily": false
+    }
+  }
+  ```
+The `{sudoku_grid}` variable prompts for user input in HTTP Request Shortcuts, allowing custom transcription from physical books directly to the reMarkable tablet.

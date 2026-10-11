@@ -26,6 +26,11 @@ on:
           - medium
           - hard
           - expert
+      sudoku_grid:
+        description: 'Custom Sudoku grid using x notation (optional)'
+        required: false
+        default: ''
+        type: string
       word_search_theme:
         description: 'Word Search theme (optional; blank for dynamic)'
         required: false
@@ -81,6 +86,12 @@ jobs:
             THEME_FLAG="--theme=$THEME_PARAM"
           fi
 
+          GRID_PARAM="${{ inputs.sudoku_grid }}"
+          GRID_FLAG=""
+          if [ -n "$GRID_PARAM" ]; then
+            GRID_FLAG="--grid=$GRID_PARAM"
+          fi
+
           DAILY_FLAG=""
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.is_daily }}" != "false" ]; then
             DAILY_FLAG="--daily"
@@ -91,4 +102,5 @@ jobs:
             --difficulty=${{ inputs.sudoku_difficulty || 'random' }} \
             $THEME_FLAG \
             $DAILY_FLAG \
+            $GRID_FLAG \
             --upload
