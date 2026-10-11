@@ -13,6 +13,8 @@ export interface RunOptions {
   date?: string;
   upload?: boolean;
   outputDir?: string;
+  daily?: boolean;
+  folder?: string;
 }
 
 export interface GeneratedResult {
@@ -62,8 +64,9 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
     console.log(`Rendering PDF for ${puzzle.title}...`);
     const pdfBuffer = await gen.renderPdf(puzzle);
 
-    console.log(`Delivering ${puzzle.filename} to ${puzzle.metadata.targetFolder}...`);
-    const deliveredPath = await deliveryClient.deliver(puzzle.filename, puzzle.metadata.targetFolder, pdfBuffer);
+    const targetFolder = options.folder ?? (options.daily ? '/Puzzles/Daily' : puzzle.metadata.targetFolder);
+    console.log(`Delivering ${puzzle.filename} to ${targetFolder}...`);
+    const deliveredPath = await deliveryClient.deliver(puzzle.filename, targetFolder, pdfBuffer);
 
     results.push({ puzzle, deliveredPath });
   }

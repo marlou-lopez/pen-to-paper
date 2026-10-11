@@ -60,4 +60,37 @@ describe('Orchestrator runGenerator', () => {
     warnSpy.mockRestore();
     isAvailableSpy.mockRestore();
   });
+
+  it('routes to /Puzzles/Daily when daily option is true', async () => {
+    const results = await runGenerator({
+      type: 'word-search',
+      daily: true,
+      outputDir: './test-cli-output',
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].deliveredPath).toContain('Puzzles/Daily');
+  });
+
+  it('routes to custom folder when folder option is provided', async () => {
+    const results = await runGenerator({
+      type: 'sudoku',
+      folder: '/Puzzles/CustomTesting',
+      outputDir: './test-cli-output',
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].deliveredPath).toContain('Puzzles/CustomTesting');
+  });
+
+  it('routes to default category folder when daily is false or omitted', async () => {
+    const results = await runGenerator({
+      type: 'word-search',
+      daily: false,
+      outputDir: './test-cli-output',
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].deliveredPath).toContain('Puzzles/Word Search');
+  });
 });

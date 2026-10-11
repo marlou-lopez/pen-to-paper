@@ -23,6 +23,10 @@ function parseArgs(): RunOptions {
       options.outputDir = arg.slice(arg.indexOf('=') + 1);
     } else if (arg === '--upload') {
       options.upload = true;
+    } else if (arg === '--daily') {
+      options.daily = true;
+    } else if (arg.startsWith('--folder=')) {
+      options.folder = arg.slice(arg.indexOf('=') + 1);
     }
   }
 
@@ -32,7 +36,7 @@ function parseArgs(): RunOptions {
 async function main() {
   const options = parseArgs();
   console.log(`--- Pen to Paper Daily Puzzle Generator ---`);
-  console.log(`Type: ${options.type} | Difficulty: ${options.difficulty} | Upload: ${options.upload}`);
+  console.log(`Type: ${options.type || 'all'} | Difficulty: ${options.difficulty || 'auto'} | Daily: ${Boolean(options.daily)} | Upload: ${Boolean(options.upload)}`);
 
   try {
     const results = await runGenerator(options);
