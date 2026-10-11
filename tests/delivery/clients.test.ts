@@ -107,6 +107,14 @@ describe('Delivery Clients', () => {
 
     expect(execCalls).toContainEqual({
       cmd: 'rmapi',
+      args: ['mkdir', '/Puzzles'],
+    });
+    expect(execCalls).toContainEqual({
+      cmd: 'rmapi',
+      args: ['mkdir', '/Puzzles/Archive'],
+    });
+    expect(execCalls).toContainEqual({
+      cmd: 'rmapi',
       args: ['mkdir', '/Puzzles/Archive/Word Search'],
     });
     expect(execCalls).toContainEqual({
@@ -119,15 +127,17 @@ describe('Delivery Clients', () => {
     const testDir = './test-local-delivery-archive';
     const client = new LocalDeliveryClient(testDir);
     const buffer = Buffer.from('local-data');
-    await client.deliver('Test.pdf', '/Puzzles/Daily', buffer);
+    try {
+      await client.deliver('Test.pdf', '/Puzzles/Daily', buffer);
 
-    const wsArchive = path.join(testDir, 'Puzzles/Archive/Word Search');
-    const sudokuArchive = path.join(testDir, 'Puzzles/Archive/Sudoku');
-    const wsStat = await fs.stat(wsArchive);
-    const sudokuStat = await fs.stat(sudokuArchive);
-    expect(wsStat.isDirectory()).toBe(true);
-    expect(sudokuStat.isDirectory()).toBe(true);
-
-    await fs.rm(testDir, { recursive: true, force: true });
+      const wsArchive = path.join(testDir, 'Puzzles/Archive/Word Search');
+      const sudokuArchive = path.join(testDir, 'Puzzles/Archive/Sudoku');
+      const wsStat = await fs.stat(wsArchive);
+      const sudokuStat = await fs.stat(sudokuArchive);
+      expect(wsStat.isDirectory()).toBe(true);
+      expect(sudokuStat.isDirectory()).toBe(true);
+    } finally {
+      await fs.rm(testDir, { recursive: true, force: true });
+    }
   });
 });
