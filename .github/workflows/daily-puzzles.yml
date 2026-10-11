@@ -58,11 +58,15 @@ jobs:
           echo "$HOME/bin" >> $GITHUB_PATH
 
       - name: Setup rmapi auth
-        if: "${{ secrets.RMAPI_AUTH_TOKEN != '' }}"
         run: |
-          mkdir -p ~/.config/rmapi
-          echo "$RMAPI_AUTH_TOKEN" > ~/.rmapi
-          echo "$RMAPI_AUTH_TOKEN" > ~/.config/rmapi/rmapi.conf
+          if [ -n "$RMAPI_AUTH_TOKEN" ]; then
+            mkdir -p ~/.config/rmapi
+            echo "$RMAPI_AUTH_TOKEN" > ~/.rmapi
+            echo "$RMAPI_AUTH_TOKEN" > ~/.config/rmapi/rmapi.conf
+            echo "rmapi credentials configured."
+          else
+            echo "RMAPI_AUTH_TOKEN not provided; skipping auth setup."
+          fi
 
       - name: Run puzzle generation & upload
         run: |
