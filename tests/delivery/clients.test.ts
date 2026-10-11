@@ -93,4 +93,41 @@ describe('Delivery Clients', () => {
       )
     ).toBe(true);
   });
+
+  it('RmapiDeliveryClient pre-creates archive folders on delivery', async () => {
+    const execCalls: { cmd: string; args: string[] }[] = [];
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      execCalls.push({ cmd, args: args ?? [] });
+      return Buffer.from('');
+    });
+
+    const client = new RmapiDeliveryClient();
+    const buffer = Buffer.from('test-data');
+    await client.deliver('Sample.pdf', '/Puzzles/Daily', buffer);
+
+    expect(execCalls).toContainEqual({
+      cmd: 'rmapi',
+      args: ['mkdir', '/Puzzles/Archive/Word Search'],
+    });
+    expect(execCalls).toContainEqual({
+      cmd: 'rmapi',
+      args: ['mkdir', '/Puzzles/Archive/Sudoku'],
+    });
+  });
+
+  it('LocalDeliveryClient pre-creates archive folders on delivery', async () => {
+    const testDir = './test-local-delivery-archive';
+    const client = new LocalDeliveryClient(testDir);
+    const buffer = Buffer.from('local-data');
+    await client.deliver('Test.pdf', '/Puzzles/Daily', buffer);
+
+    const wsArchive = path.join(testDir, 'Puzzles/Archive/Word Search');
+    const sudokuArchive = path.join(testDir, 'Puzzles/Archive/Sudoku');
+    const wsStat = await fs.stat(wsArchive);
+    const sudokuStat = await fs.stat(sudokuArchive);
+    expect(wsStat.isDirectory()).toBe(true);
+    expect(sudokuStat.isDirectory()).toBe(true);
+
+    await fs.rm(testDir, { recursive: true, force: true });
+  });
 });

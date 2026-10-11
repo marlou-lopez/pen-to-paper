@@ -33,9 +33,15 @@ export class RmapiDeliveryClient implements DeliveryClient {
         currentPath += '/' + part;
         try {
           childProcess.execFileSync('rmapi', ['mkdir', currentPath], { stdio: 'ignore' });
-        } catch {
-          // Folder already exists or was created
-        }
+        } catch {}
+      }
+
+      // Pre-create archive folders
+      const archiveFolders = ['/Puzzles/Archive', '/Puzzles/Archive/Word Search', '/Puzzles/Archive/Sudoku'];
+      for (const archivePath of archiveFolders) {
+        try {
+          childProcess.execFileSync('rmapi', ['mkdir', archivePath], { stdio: 'ignore' });
+        } catch {}
       }
 
       // Upload file (use --force to overwrite if file already exists)
