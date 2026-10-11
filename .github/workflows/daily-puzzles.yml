@@ -79,27 +79,31 @@ jobs:
           fi
 
       - name: Run puzzle generation & upload
+        env:
+          THEME_PARAM: ${{ inputs.word_search_theme }}
+          GRID_PARAM: ${{ inputs.sudoku_grid }}
+          PUZZLE_TYPE: ${{ inputs.puzzle_type || 'all' }}
+          SUDOKU_DIFF: ${{ inputs.sudoku_difficulty || 'random' }}
+          IS_DAILY: ${{ inputs.is_daily }}
         run: |
-          THEME_PARAM="${{ inputs.word_search_theme }}"
           THEME_FLAG=""
           if [ -n "$THEME_PARAM" ]; then
             THEME_FLAG="--theme=$THEME_PARAM"
           fi
 
-          GRID_PARAM="${{ inputs.sudoku_grid }}"
           GRID_FLAG=""
           if [ -n "$GRID_PARAM" ]; then
             GRID_FLAG="--grid=$GRID_PARAM"
           fi
 
           DAILY_FLAG=""
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.is_daily }}" != "false" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "$IS_DAILY" != "false" ]; then
             DAILY_FLAG="--daily"
           fi
 
           npm run generate -- \
-            --type=${{ inputs.puzzle_type || 'all' }} \
-            --difficulty=${{ inputs.sudoku_difficulty || 'random' }} \
+            --type="$PUZZLE_TYPE" \
+            --difficulty="$SUDOKU_DIFF" \
             $THEME_FLAG \
             $DAILY_FLAG \
             $GRID_FLAG \
