@@ -55,4 +55,17 @@ describe('SudokuGenerator', () => {
     expect(pdfBuffer).toBeInstanceOf(Buffer);
     expect(pdfBuffer.toString('utf8', 0, 5)).toBe('%PDF-');
   });
+
+  it('generates custom sudoku puzzle from grid notation', async () => {
+    const generator = new SudokuGenerator();
+    const puzzle = await generator.generate({
+      grid: '53xx7xxxx/6xx195xxx/x98xxxx6x/8xxx6xxx3/4xx8x3xx1/7xxx2xxx6/x6xxxx28x/xxx419xx5/xxxx8xx79',
+      date: '2026-10-12',
+    });
+
+    expect(puzzle.filename).toBe('Sudoku_Custom_2026-10-12.pdf');
+    expect(puzzle.title).toBe('Sudoku - Custom');
+    expect(puzzle.puzzleData.puzzleGrid[0][0]).toBe(5);
+    expect(puzzle.puzzleData.solutionGrid[0][2]).toBe(4);
+  });
 });

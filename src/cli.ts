@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 import { runGenerator, RunOptions } from './index.js';
 
-function parseArgs(): RunOptions {
-  const args = process.argv.slice(2);
+export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
   const options: RunOptions = {
-    type: 'all',
     difficulty: 'random',
     upload: false,
     outputDir: './output',
@@ -27,6 +25,11 @@ function parseArgs(): RunOptions {
       options.daily = true;
     } else if (arg.startsWith('--folder=')) {
       options.folder = arg.slice(arg.indexOf('=') + 1);
+    } else if (arg.startsWith('--grid=')) {
+      options.grid = arg.slice(arg.indexOf('=') + 1);
+      if (!options.type) {
+        options.type = 'sudoku';
+      }
     }
   }
 

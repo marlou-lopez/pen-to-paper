@@ -15,6 +15,7 @@ export interface RunOptions {
   outputDir?: string;
   daily?: boolean;
   folder?: string;
+  grid?: string;
 }
 
 export interface GeneratedResult {
@@ -31,7 +32,7 @@ export function createRegistry(): PuzzleRegistry {
 
 export async function runGenerator(options: RunOptions = {}): Promise<GeneratedResult[]> {
   const registry = createRegistry();
-  const selectedType = options.type || 'all';
+  const selectedType = (options.grid && !options.type) ? 'sudoku' : (options.type || 'all');
 
   const generators = selectedType === 'all'
     ? registry.getAll()
@@ -59,6 +60,7 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
       date: options.date,
       difficulty: options.difficulty,
       theme: options.theme,
+      grid: options.grid,
     });
 
     console.log(`Rendering PDF for ${puzzle.title}...`);

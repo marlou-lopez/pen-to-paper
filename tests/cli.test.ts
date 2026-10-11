@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, vi } from 'vitest';
 import fs from 'fs/promises';
 import { runGenerator } from '../src/index';
+import { parseArgs } from '../src/cli';
 import { RmapiDeliveryClient } from '../src/delivery/rmapi-client';
 
 describe('Orchestrator runGenerator', () => {
@@ -92,5 +93,31 @@ describe('Orchestrator runGenerator', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].deliveredPath).toContain('Puzzles/Word Search');
+  });
+
+  it('generates custom sudoku when --grid is provided', async () => {
+    const results = await runGenerator({
+      grid: '53xx7xxxx/6xx195xxx/x98xxxx6x/8xxx6xxx3/4xx8x3xx1/7xxx2xxx6/x6xxxx28x/xxx419xx5/xxxx8xx79',
+      outputDir: './test-cli-output',
+      date: '2026-10-12',
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].puzzle.metadata.id).toBe('sudoku');
+    expect(results[0].puzzle.filename).toContain('Sudoku_Custom_');
+  });
+});
+
+describe('CLI parseArgs', () => {
+  it('parses --grid and defaults type to sudoku if not set', () => {
+    const options = parseArgs(['--grid=53xx7xxxx/6xx195xxx']);
+    expect(options.grid).toBe('53xx7xxxx/6xx195xxx');
+    expect(options.type).toBe('sudoku');
+  });
+
+  it('preserves explicitly provided type when --grid is passed', () => {
+    const options = parseArgs(['--type=sudoku', '--grid=53xx7xxxx/6xx195xxx']);
+    expect(options.grid).toBe('53xx7xxxx/6xx195xxx');
+    expect(options.type).toBe('sudoku');
   });
 });

@@ -1,12 +1,15 @@
 import { getSudoku } from 'sudoku-gen';
 import { GeneratedPuzzle, PuzzleGenerator, PuzzleMetadata } from '../../core/types.js';
 import { renderSudokuPdf } from './renderer.js';
+import { parseSudokuGrid } from './parser.js';
+import { solveSudoku } from './solver.js';
 
 export type SudokuDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
 export interface SudokuOptions {
   date?: string;
   difficulty?: string;
+  grid?: string;
 }
 
 export interface SudokuData {
@@ -51,6 +54,24 @@ export class SudokuGenerator implements PuzzleGenerator<SudokuOptions, SudokuDat
 
   async generate(options?: SudokuOptions): Promise<GeneratedPuzzle<SudokuData>> {
     const dateStr = options?.date ?? new Date().toISOString().slice(0, 10);
+
+    if (options?.grid) {
+      const puzzleGrid = parseSudokuGrid(options.grid);
+      const solutionGrid = solveSudoku(puzzleGrid);
+      const filename = `Sudoku_Custom_${dateStr}.pdf`;
+
+      return {
+        metadata: this.metadata,
+        title: 'Sudoku - Custom',
+        filename,
+        puzzleData: {
+          difficulty: 'expert', // default display weight
+          puzzleGrid,
+          solutionGrid,
+        },
+      };
+    }
+
     const dateObj = new Date(dateStr + 'T12:00:00Z');
     const difficulty = resolveSudokuDifficulty(options?.difficulty, dateObj);
 
