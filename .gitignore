@@ -1,0 +1,8 @@
+node_modules/
+dist/
+output/
+test-output/
+test-cli-output/
+.superpowers/
+.env
+.DS_Store
