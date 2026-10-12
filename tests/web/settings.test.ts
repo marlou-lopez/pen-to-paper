@@ -106,3 +106,68 @@ describe('Workflow Dispatch for Mini Crossword', () => {
     expect(capturedBody.inputs.is_daily).toBe('true');
   });
 });
+
+describe('Workflow Dispatch for KenKen', () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('dispatches kenken with kenken_size and kenken_difficulty', async () => {
+    let capturedUrl = '';
+    let capturedBody: any = null;
+
+    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+      capturedUrl = url;
+      capturedBody = JSON.parse(init?.body as string);
+      return {
+        ok: true,
+        status: 204,
+      } as Response;
+    }) as any;
+
+    await dispatchWorkflow({
+      token: 'ghp_secret',
+      repo: 'marlou-lopez/pen-to-paper',
+      inputs: {
+        puzzle_type: 'kenken',
+        kenken_size: '7',
+        kenken_difficulty: 'hard',
+        is_daily: false,
+      },
+    });
+
+    expect(capturedUrl).toContain('/actions/workflows/daily-puzzles.yml/dispatches');
+    expect(capturedBody.inputs.puzzle_type).toBe('kenken');
+    expect(capturedBody.inputs.kenken_size).toBe('7');
+    expect(capturedBody.inputs.kenken_difficulty).toBe('hard');
+    expect(capturedBody.inputs.is_daily).toBe('false');
+  });
+
+  it('dispatches kenken with default size 6 and medium difficulty when not specified', async () => {
+    let capturedBody: any = null;
+
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+      capturedBody = JSON.parse(init?.body as string);
+      return {
+        ok: true,
+        status: 204,
+      } as Response;
+    }) as any;
+
+    await dispatchWorkflow({
+      token: 'ghp_secret',
+      repo: 'marlou-lopez/pen-to-paper',
+      inputs: {
+        puzzle_type: 'kenken',
+        is_daily: true,
+      },
+    });
+
+    expect(capturedBody.inputs.puzzle_type).toBe('kenken');
+    expect(capturedBody.inputs.kenken_size).toBe('6');
+    expect(capturedBody.inputs.kenken_difficulty).toBe('medium');
+    expect(capturedBody.inputs.is_daily).toBe('true');
+  });
+});

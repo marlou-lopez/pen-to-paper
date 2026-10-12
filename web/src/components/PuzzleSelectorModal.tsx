@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { X, Grid3X3, Search, Zap, Check, Edit3 } from 'lucide-react';
+import { X, Grid3X3, Search, Zap, Check, Edit3, Calculator } from 'lucide-react';
 
-export type ActiveTab = 'sudoku' | 'word-search' | 'daily' | 'mini-crossword';
+export type ActiveTab = 'sudoku' | 'word-search' | 'daily' | 'mini-crossword' | 'kenken';
 
 interface PuzzleOption {
   id: ActiveTab;
@@ -17,6 +17,13 @@ const PUZZLE_OPTIONS: PuzzleOption[] = [
     title: 'Sudoku Studio',
     description: 'Transcribe physical books or create custom grids',
     icon: Grid3X3,
+  },
+  {
+    id: 'kenken',
+    title: 'KenKen Studio',
+    badge: 'New',
+    description: '3×3 to 9×9 Mathdoku puzzles with cage validation',
+    icon: Calculator,
   },
   {
     id: 'word-search',

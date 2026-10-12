@@ -3,11 +3,13 @@ export interface DispatchOptions {
   repo: string; // e.g. "marlou-lopez/pen-to-paper"
   ref?: string; // e.g. "main"
   inputs: {
-    puzzle_type: 'all' | 'sudoku' | 'word-search' | 'mini-crossword';
+    puzzle_type: 'all' | 'sudoku' | 'word-search' | 'mini-crossword' | 'kenken';
     sudoku_difficulty?: string;
     sudoku_grid?: string;
     word_search_theme?: string;
     crossword_theme?: string;
+    kenken_size?: string;
+    kenken_difficulty?: string;
     is_daily?: boolean;
   };
 }
@@ -126,6 +128,8 @@ export async function dispatchWorkflow(opts: DispatchOptions): Promise<void> {
       sudoku_grid: opts.inputs.sudoku_grid || '',
       word_search_theme: opts.inputs.word_search_theme || '',
       crossword_theme: opts.inputs.crossword_theme || '',
+      kenken_size: opts.inputs.kenken_size || '6',
+      kenken_difficulty: opts.inputs.kenken_difficulty || 'medium',
       is_daily: String(opts.inputs.is_daily !== false),
     },
   };
