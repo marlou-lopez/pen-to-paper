@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   RotateCcw,
   Sparkles,
@@ -9,6 +9,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   ExternalLink,
+  Eye,
+  EyeOff,
+  Eraser,
 } from 'lucide-react';
 import {
   getStoredSettings,
@@ -16,164 +19,17 @@ import {
   pollWorkflowRun,
   WorkflowRun,
 } from '../services/githubApi.ts';
+import {
+  CELL_CLUE_NUMBERS,
+  PRESET_THEMES,
+  SAMPLE_PUZZLES,
+  createEmptyCrosswordGrid,
+  isCrosswordSolved,
+} from '../utils/crossword.ts';
 
 export interface MiniCrosswordStudioProps {
   onOpenSettings: () => void;
 }
-
-export interface SampleClue {
-  number: number;
-  direction: 'across' | 'down';
-  word: string;
-  clue: string;
-  startRow: number;
-  startCol: number;
-  length: number;
-}
-
-export interface SampleCrossword {
-  title: string;
-  grid: string[][];
-  acrossClues: SampleClue[];
-  downClues: SampleClue[];
-}
-
-const SAMPLE_PUZZLES: SampleCrossword[] = [
-  {
-    title: 'Heart & Soul',
-    grid: [
-      ['H', 'E', 'A', 'R', 'T'],
-      ['E', 'M', 'B', 'E', 'R'],
-      ['A', 'B', 'U', 'S', 'E'],
-      ['R', 'E', 'S', 'I', 'N'],
-      ['T', 'R', 'E', 'N', 'D'],
-    ],
-    acrossClues: [
-      { number: 1, direction: 'across', word: 'HEART', clue: 'Vital muscular organ pumping blood', startRow: 0, startCol: 0, length: 5 },
-      { number: 6, direction: 'across', word: 'EMBER', clue: 'Glowing piece of burning coal or wood', startRow: 1, startCol: 0, length: 5 },
-      { number: 7, direction: 'across', word: 'ABUSE', clue: 'Cruel or improper treatment', startRow: 2, startCol: 0, length: 5 },
-      { number: 8, direction: 'across', word: 'RESIN', clue: 'Sticky organic fluid from pine trees', startRow: 3, startCol: 0, length: 5 },
-      { number: 9, direction: 'across', word: 'TREND', clue: 'General direction in which things are developing', startRow: 4, startCol: 0, length: 5 },
-    ],
-    downClues: [
-      { number: 1, direction: 'down', word: 'HEART', clue: 'Center or core of an emotional issue', startRow: 0, startCol: 0, length: 5 },
-      { number: 2, direction: 'down', word: 'EMBER', clue: 'Smoldering remnant of a dying campfire', startRow: 0, startCol: 1, length: 5 },
-      { number: 3, direction: 'down', word: 'ABUSE', clue: 'Excessive or corrupt misuse of authority', startRow: 0, startCol: 2, length: 5 },
-      { number: 4, direction: 'down', word: 'RESIN', clue: 'Tree secretion used in varnishes', startRow: 0, startCol: 3, length: 5 },
-      { number: 5, direction: 'down', word: 'TREND', clue: 'Popular style or viral topic online', startRow: 0, startCol: 4, length: 5 },
-    ],
-  },
-  {
-    title: 'Standing Firm',
-    grid: [
-      ['S', 'T', 'A', 'N', 'D'],
-      ['T', 'A', 'B', 'O', 'O'],
-      ['A', 'B', 'B', 'O', 'T'],
-      ['N', 'O', 'O', 'S', 'E'],
-      ['D', 'O', 'T', 'E', 'D'],
-    ],
-    acrossClues: [
-      { number: 1, direction: 'across', word: 'STAND', clue: "Remain upright on one's feet", startRow: 0, startCol: 0, length: 5 },
-      { number: 6, direction: 'across', word: 'TABOO', clue: 'Prohibited by social custom or religion', startRow: 1, startCol: 0, length: 5 },
-      { number: 7, direction: 'across', word: 'ABBOT', clue: 'Head of a community of monks', startRow: 2, startCol: 0, length: 5 },
-      { number: 8, direction: 'across', word: 'NOOSE', clue: 'Loop with a running knot for hanging', startRow: 3, startCol: 0, length: 5 },
-      { number: 9, direction: 'across', word: 'DOTED', clue: 'Showed excessive affection or fondness', startRow: 4, startCol: 0, length: 5 },
-    ],
-    downClues: [
-      { number: 1, direction: 'down', word: 'STAND', clue: 'Take an assertive position on a dispute', startRow: 0, startCol: 0, length: 5 },
-      { number: 2, direction: 'down', word: 'TABOO', clue: 'Forbidden topic or off-limits practice', startRow: 0, startCol: 1, length: 5 },
-      { number: 3, direction: 'down', word: 'ABBOT', clue: 'Monastic leader in a priory', startRow: 0, startCol: 2, length: 5 },
-      { number: 4, direction: 'down', word: 'NOOSE', clue: 'Rope trap or slipknot fastener', startRow: 0, startCol: 3, length: 5 },
-      { number: 5, direction: 'down', word: 'DOTED', clue: 'Lavished unconditional love upon', startRow: 0, startCol: 4, length: 5 },
-    ],
-  },
-  {
-    title: 'Morning Clouds',
-    grid: [
-      ['C', 'L', 'O', 'U', 'D'],
-      ['L', 'E', 'A', 'S', 'E'],
-      ['O', 'A', 'K', 'E', 'N'],
-      ['U', 'S', 'E', 'R', 'S'],
-      ['D', 'E', 'N', 'S', 'E'],
-    ],
-    acrossClues: [
-      { number: 1, direction: 'across', word: 'CLOUD', clue: 'Visible mass of condensed water vapor', startRow: 0, startCol: 0, length: 5 },
-      { number: 6, direction: 'across', word: 'LEASE', clue: 'Contract granting land or property use', startRow: 1, startCol: 0, length: 5 },
-      { number: 7, direction: 'across', word: 'OAKEN', clue: 'Made from hardwood of the genus Quercus', startRow: 2, startCol: 0, length: 5 },
-      { number: 8, direction: 'across', word: 'USERS', clue: 'People operating a software system', startRow: 3, startCol: 0, length: 5 },
-      { number: 9, direction: 'across', word: 'DENSE', clue: 'Closely compacted in substance or crowded', startRow: 4, startCol: 0, length: 5 },
-    ],
-    downClues: [
-      { number: 1, direction: 'down', word: 'CLOUD', clue: 'Vapor gathering before precipitation', startRow: 0, startCol: 0, length: 5 },
-      { number: 2, direction: 'down', word: 'LEASE', clue: 'Rental agreement between tenant and landlord', startRow: 0, startCol: 1, length: 5 },
-      { number: 3, direction: 'down', word: 'OAKEN', clue: 'Crafted from sturdy oak timber', startRow: 0, startCol: 2, length: 5 },
-      { number: 4, direction: 'down', word: 'USERS', clue: 'Subscribers utilizing an application', startRow: 0, startCol: 3, length: 5 },
-      { number: 5, direction: 'down', word: 'DENSE', clue: 'Thickly packed with trees or foliage', startRow: 0, startCol: 4, length: 5 },
-    ],
-  },
-  {
-    title: 'Royal North',
-    grid: [
-      ['C', 'R', 'O', 'W', 'N'],
-      ['R', 'E', 'T', 'R', 'O'],
-      ['O', 'T', 'H', 'E', 'R'],
-      ['W', 'R', 'E', 'S', 'T'],
-      ['N', 'O', 'R', 'T', 'H'],
-    ],
-    acrossClues: [
-      { number: 1, direction: 'across', word: 'CROWN', clue: 'Ornamental circular headdress of monarchs', startRow: 0, startCol: 0, length: 5 },
-      { number: 6, direction: 'across', word: 'RETRO', clue: 'Imitative of past styles and fashions', startRow: 1, startCol: 0, length: 5 },
-      { number: 7, direction: 'across', word: 'OTHER', clue: 'Different from one previously mentioned', startRow: 2, startCol: 0, length: 5 },
-      { number: 8, direction: 'across', word: 'WREST', clue: "Forcibly pull or tear from someone's grasp", startRow: 3, startCol: 0, length: 5 },
-      { number: 9, direction: 'across', word: 'NORTH', clue: 'Compass direction pointing to the pole', startRow: 4, startCol: 0, length: 5 },
-    ],
-    downClues: [
-      { number: 1, direction: 'down', word: 'CROWN', clue: 'Peak or highest point of an arch or hill', startRow: 0, startCol: 0, length: 5 },
-      { number: 2, direction: 'down', word: 'RETRO', clue: 'Vintage aesthetic looking back in time', startRow: 0, startCol: 1, length: 5 },
-      { number: 3, direction: 'down', word: 'OTHER', clue: 'Alternative person or option', startRow: 0, startCol: 2, length: 5 },
-      { number: 4, direction: 'down', word: 'WREST', clue: 'Snatch or wrench away with effort', startRow: 0, startCol: 3, length: 5 },
-      { number: 5, direction: 'down', word: 'NORTH', clue: 'Direction opposite to south on a map', startRow: 0, startCol: 4, length: 5 },
-    ],
-  },
-  {
-    title: 'Sweet Dreams',
-    grid: [
-      ['D', 'R', 'E', 'A', 'M'],
-      ['R', 'E', 'T', 'R', 'O'],
-      ['E', 'T', 'H', 'E', 'R'],
-      ['A', 'R', 'E', 'N', 'A'],
-      ['M', 'O', 'R', 'A', 'L'],
-    ],
-    acrossClues: [
-      { number: 1, direction: 'across', word: 'DREAM', clue: 'Series of thoughts and visions during sleep', startRow: 0, startCol: 0, length: 5 },
-      { number: 6, direction: 'across', word: 'RETRO', clue: 'Nostalgic design reminiscent of the past', startRow: 1, startCol: 0, length: 5 },
-      { number: 7, direction: 'across', word: 'ETHER', clue: 'Volatile liquid once used as an anesthetic', startRow: 2, startCol: 0, length: 5 },
-      { number: 8, direction: 'across', word: 'ARENA', clue: 'Level area surrounded by seating for sports', startRow: 3, startCol: 0, length: 5 },
-      { number: 9, direction: 'across', word: 'MORAL', clue: 'Lesson or ethical principle from a fable', startRow: 4, startCol: 0, length: 5 },
-    ],
-    downClues: [
-      { number: 1, direction: 'down', word: 'DREAM', clue: 'Cherished hope, ambition, or slumber fantasy', startRow: 0, startCol: 0, length: 5 },
-      { number: 2, direction: 'down', word: 'RETRO', clue: 'Throwback fashion or vintage pop style', startRow: 0, startCol: 1, length: 5 },
-      { number: 3, direction: 'down', word: 'ETHER', clue: 'Upper air or classical element of the heavens', startRow: 0, startCol: 2, length: 5 },
-      { number: 4, direction: 'down', word: 'ARENA', clue: 'Stadium setting for contests or gladiators', startRow: 0, startCol: 3, length: 5 },
-      { number: 5, direction: 'down', word: 'MORAL', clue: 'Concerned with principles of right and wrong', startRow: 0, startCol: 4, length: 5 },
-    ],
-  },
-];
-
-const PRESET_THEMES = ['Daily', 'Astronomy', 'Nature', 'Ocean', 'History'];
-
-const CELL_CLUE_NUMBERS: Record<string, number> = {
-  '0,0': 1,
-  '0,1': 2,
-  '0,2': 3,
-  '0,3': 4,
-  '0,4': 5,
-  '1,0': 6,
-  '2,0': 7,
-  '3,0': 8,
-  '4,0': 9,
-};
 
 export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpenSettings }) => {
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>([0, 0]);
@@ -181,6 +37,11 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
   const [sampleIndex, setSampleIndex] = useState(0);
   const [selectedPreset, setSelectedPreset] = useState<string>('Daily');
   const [customTheme, setCustomTheme] = useState<string>('');
+
+  // Player grid and solution visibility (solutions hidden by default)
+  const [userGrid, setUserGrid] = useState<string[][]>(() => createEmptyCrosswordGrid());
+  const [showSolution, setShowSolution] = useState(false);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   const [isBusy, setIsBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
@@ -192,6 +53,11 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
 
   const activeTheme = customTheme.trim() ? customTheme.trim() : selectedPreset;
   const currentPuzzle = SAMPLE_PUZZLES[sampleIndex];
+
+  // Check if player solved the puzzle
+  const isSolved = useMemo(() => {
+    return isCrosswordSolved(userGrid, currentPuzzle.grid);
+  }, [userGrid, currentPuzzle]);
 
   // Active clue computation
   const activeClue = useMemo(() => {
@@ -219,6 +85,7 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
       setDirection('down');
       setSelectedCell([0, nextIndex - 5]);
     }
+    hiddenInputRef.current?.focus();
   }, [activeClueIndex]);
 
   const handleNextClue = useCallback(() => {
@@ -230,6 +97,7 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
       setDirection('down');
       setSelectedCell([0, nextIndex - 5]);
     }
+    hiddenInputRef.current?.focus();
   }, [activeClueIndex]);
 
   // Toggle direction or select cell
@@ -239,26 +107,94 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
     } else {
       setSelectedCell([r, c]);
     }
+    hiddenInputRef.current?.focus();
   };
 
-  const handleToggleDirection = () => {
+  const handleToggleDirection = useCallback(() => {
     setDirection((d) => (d === 'across' ? 'down' : 'across'));
-  };
+    hiddenInputRef.current?.focus();
+  }, []);
 
   const handleCycleSample = () => {
     setSampleIndex((prev) => (prev + 1) % SAMPLE_PUZZLES.length);
+    setUserGrid(createEmptyCrosswordGrid());
+    setShowSolution(false);
     setSelectedCell([0, 0]);
+    hiddenInputRef.current?.focus();
   };
+
+  const handleClearGrid = useCallback(() => {
+    setUserGrid(createEmptyCrosswordGrid());
+    setShowSolution(false);
+    setSelectedCell([0, 0]);
+    hiddenInputRef.current?.focus();
+  }, []);
 
   const handleSelectPreset = (preset: string) => {
     setSelectedPreset(preset);
     setCustomTheme('');
   };
 
-  // Keyboard navigation
+  // Character entry and auto-advance
+  const handleInputCharacter = useCallback(
+    (char: string) => {
+      if (!selectedCell) return;
+      const [r, c] = selectedCell;
+      const upper = char.toUpperCase();
+      if (!/^[A-Z]$/.test(upper)) return;
+
+      setUserGrid((prev) => {
+        const next = prev.map((row) => [...row]);
+        next[r][c] = upper;
+        return next;
+      });
+
+      // Auto-advance cursor in current direction
+      if (direction === 'across') {
+        if (c < 4) {
+          setSelectedCell([r, c + 1]);
+        }
+      } else {
+        if (r < 4) {
+          setSelectedCell([r + 1, c]);
+        }
+      }
+    },
+    [selectedCell, direction]
+  );
+
+  const handleBackspace = useCallback(() => {
+    if (!selectedCell) return;
+    const [r, c] = selectedCell;
+
+    setUserGrid((prev) => {
+      const currentVal = prev[r]?.[c] || '';
+      const next = prev.map((row) => [...row]);
+
+      if (currentVal !== '') {
+        next[r][c] = '';
+        return next;
+      }
+
+      // If current cell was already empty, move backward and clear previous cell
+      if (direction === 'across' && c > 0) {
+        next[r][c - 1] = '';
+        setSelectedCell([r, c - 1]);
+      } else if (direction === 'down' && r > 0) {
+        next[r - 1][c] = '';
+        setSelectedCell([r - 1, c]);
+      }
+      return next;
+    });
+  }, [selectedCell, direction]);
+
+  // Keyboard navigation & entry
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+      if (
+        e.target !== hiddenInputRef.current &&
+        ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
+      ) {
         return;
       }
 
@@ -284,12 +220,35 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
         } else {
           handleNextClue();
         }
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleBackspace();
+      } else if (e.key === 'Delete') {
+        e.preventDefault();
+        if (selectedCell) {
+          const [r, c] = selectedCell;
+          setUserGrid((prev) => {
+            const next = prev.map((row) => [...row]);
+            next[r][c] = '';
+            return next;
+          });
+        }
+      } else if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        handleInputCharacter(e.key);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCell, handlePrevClue, handleNextClue]);
+  }, [
+    selectedCell,
+    handlePrevClue,
+    handleNextClue,
+    handleToggleDirection,
+    handleBackspace,
+    handleInputCharacter,
+  ]);
 
   // Dispatch workflow
   const handleSendToRemarkable = async () => {
@@ -377,20 +336,79 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
 
   return (
     <div className="h-full max-w-md mx-auto flex flex-col justify-between pt-2 pb-2 safe-bottom px-3 select-none touch-manipulation">
+      {/* Hidden input to invoke mobile soft keyboard and capture input */}
+      <input
+        ref={hiddenInputRef}
+        type="text"
+        value=""
+        onChange={(e) => {
+          const val = e.target.value;
+          if (val) {
+            handleInputCharacter(val.slice(-1));
+          }
+          e.target.value = '';
+        }}
+        autoCapitalize="characters"
+        autoCorrect="off"
+        autoComplete="off"
+        spellCheck={false}
+        className="sr-only opacity-0 absolute -top-96 left-0 pointer-events-none"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+
       {/* Top Section */}
       <div className="w-full flex flex-col items-center space-y-2">
         {/* Utility Subheader */}
         <div className="w-full flex items-center justify-between text-xs px-1 text-gray-600">
-          <div className="flex items-center space-x-1.5">
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+          <div className="flex items-center space-x-1.5 min-w-0">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-800 border border-gray-200 truncate">
               Theme: {activeTheme}
             </span>
-            <span className="text-[10px] text-gray-400 font-mono hidden min-[380px]:inline">
+            {isSolved && !showSolution && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0 animate-pulse">
+                🎉 Solved!
+              </span>
+            )}
+            <span className="text-[10px] text-gray-400 font-mono hidden min-[400px]:inline shrink-0">
               #{sampleIndex + 1}/{SAMPLE_PUZZLES.length}
             </span>
           </div>
 
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center space-x-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowSolution((prev) => !prev)}
+              className={`px-2 py-1 text-[11px] font-semibold border rounded-md flex items-center space-x-1 shadow-xs active:scale-95 transition-colors ${
+                showSolution
+                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+              }`}
+              title={showSolution ? 'Hide solution' : 'Reveal solution'}
+            >
+              {showSolution ? (
+                <>
+                  <EyeOff className="w-3 h-3 text-amber-700" />
+                  <span>Hide</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-3 h-3 text-gray-500" />
+                  <span>Reveal</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleClearGrid}
+              className="px-2 py-1 text-[11px] font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 flex items-center space-x-1 shadow-xs active:scale-95"
+              title="Clear entered letters"
+            >
+              <Eraser className="w-3 h-3 text-gray-500" />
+              <span className="hidden min-[360px]:inline">Clear</span>
+            </button>
+
             <button
               type="button"
               onClick={handleToggleDirection}
@@ -419,12 +437,14 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
           <div className="bg-gray-950 p-1 rounded-xl shadow-md border-2 border-gray-900 inline-block">
             <div className="grid grid-cols-5 bg-gray-900 gap-[1px]">
               {currentPuzzle.grid.map((row, r) =>
-                row.map((char, c) => {
+                row.map((solutionChar, c) => {
                   const isSelected = selectedCell && selectedCell[0] === r && selectedCell[1] === c;
                   const isSameWord =
                     selectedCell &&
                     (direction === 'across' ? selectedCell[0] === r : selectedCell[1] === c);
                   const clueNum = CELL_CLUE_NUMBERS[`${r},${c}`];
+                  const userChar = userGrid[r]?.[c] || '';
+                  const displayChar = showSolution ? solutionChar : userChar;
 
                   let cellBg = 'bg-white text-gray-900';
                   if (isSelected) {
@@ -445,7 +465,13 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
                           {clueNum}
                         </span>
                       )}
-                      <span className="text-xl font-bold uppercase select-none">{char}</span>
+                      <span
+                        className={`text-xl font-bold uppercase select-none ${
+                          showSolution ? 'text-amber-800' : 'text-gray-900'
+                        }`}
+                      >
+                        {displayChar}
+                      </span>
                     </button>
                   );
                 })
