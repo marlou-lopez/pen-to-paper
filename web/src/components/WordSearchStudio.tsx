@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
   Send,
   Sparkles,
-  FolderTree,
-  Inbox,
   Loader2,
   CheckCircle2,
   AlertTriangle,
@@ -42,7 +40,6 @@ const CURATED_THEMES = [
 export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettings }) => {
   const [selectedPreset, setSelectedPreset] = useState<string>('Astronomy');
   const [customTheme, setCustomTheme] = useState<string>('');
-  const [isDaily, setIsDaily] = useState<boolean>(false); // default: category folder (/Puzzles/Word Search/)
 
   const [isBusy, setIsBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
@@ -60,7 +57,8 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
   };
 
   const handleSendToRemarkable = async () => {
-    const { token, repo } = getStoredSettings();
+    const { token, repo, defaultDestination } = getStoredSettings();
+    const isDaily = defaultDestination === 'daily';
 
     if (!token) {
       setStatusMessage({
@@ -150,7 +148,7 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4 space-y-4 pb-24">
+    <div className="max-w-md mx-auto px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
       {/* Title */}
       <div>
         <h1 className="text-xl font-bold tracking-tight text-gray-950 flex items-center space-x-1.5">
@@ -161,37 +159,8 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
         </p>
       </div>
 
-      {/* Destination Selector */}
-      <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-gray-700">Delivery Destination</span>
-          <div className="flex bg-gray-100 p-0.5 rounded-lg">
-            <button
-              type="button"
-              onClick={() => setIsDaily(false)}
-              className={`px-2.5 py-1 rounded-md font-medium text-xs transition-all flex items-center space-x-1 ${
-                !isDaily ? 'bg-white text-gray-900 shadow-sm font-semibold' : 'text-gray-500'
-              }`}
-            >
-              <FolderTree className="w-3 h-3" />
-              <span>/Puzzles/Word Search/</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDaily(true)}
-              className={`px-2.5 py-1 rounded-md font-medium text-xs transition-all flex items-center space-x-1 ${
-                isDaily ? 'bg-white text-gray-900 shadow-sm font-semibold' : 'text-gray-500'
-              }`}
-            >
-              <Inbox className="w-3 h-3" />
-              <span>/Puzzles/Daily/</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Custom Theme Input */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-xs space-y-2">
         <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 flex items-center justify-between">
           <span>Custom Dynamic Theme</span>
           <span className="text-[10px] text-gray-400 font-normal">Optional</span>
@@ -202,7 +171,7 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
             value={customTheme}
             onChange={(e) => setCustomTheme(e.target.value)}
             placeholder="e.g. Cyberpunk, Ancient Egypt, Jazz Classics..."
-            className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className="w-full px-3.5 py-2 sm:py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
           />
         </div>
         <p className="text-[11px] text-gray-500">
@@ -211,7 +180,7 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
       </div>
 
       {/* Curated Presets */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-xs space-y-2.5 sm:space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-700 flex items-center space-x-1">
             <BookOpen className="w-3.5 h-3.5 text-gray-500" />
@@ -220,7 +189,7 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
           <span className="text-[11px] text-gray-400">Instant generation</span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+        <div className="flex flex-wrap gap-1.5 max-h-40 sm:max-h-48 overflow-y-auto pr-1">
           {CURATED_THEMES.map((theme) => {
             const isSelected = !customTheme.trim() && selectedPreset === theme;
             return (
@@ -228,7 +197,7 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
                 key={theme}
                 type="button"
                 onClick={() => handleSelectPreset(theme)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   isSelected
                     ? 'bg-gray-950 text-white shadow-xs'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
@@ -242,8 +211,8 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
       </div>
 
       {/* Selected Theme Display & Send Action */}
-      <div className="space-y-3 pt-1">
-        <div className="p-3 bg-gray-100/80 rounded-xl border border-gray-200 flex items-center justify-between text-xs">
+      <div className="space-y-2.5 sm:space-y-3 pt-0.5">
+        <div className="p-2.5 sm:p-3 bg-gray-100/80 rounded-xl border border-gray-200 flex items-center justify-between text-xs">
           <span className="text-gray-500">Active Theme:</span>
           <span className="font-bold text-gray-950 flex items-center space-x-1">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -255,7 +224,7 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
           type="button"
           onClick={handleSendToRemarkable}
           disabled={isBusy || !activeTheme}
-          className="w-full py-3.5 px-4 bg-gray-950 hover:bg-black active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2"
+          className="w-full py-3 sm:py-3.5 px-4 bg-gray-950 hover:bg-black active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2"
         >
           {isBusy ? (
             <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -268,7 +237,7 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
         {/* Live Status Banner */}
         {statusMessage.text && (
           <div
-            className={`p-3.5 rounded-xl border text-xs space-y-1 ${
+            className={`p-3 rounded-xl border text-xs space-y-1 ${
               statusMessage.type === 'error'
                 ? 'bg-rose-50 border-rose-200 text-rose-900'
                 : statusMessage.type === 'success'
@@ -277,17 +246,17 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
             }`}
           >
             <div className="flex items-center justify-between font-semibold">
-              <span className="flex items-center space-x-1.5">
+              <span className="flex items-center space-x-1.5 truncate">
                 {statusMessage.type === 'running' && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 shrink-0" />
                 )}
                 {statusMessage.type === 'success' && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 )}
                 {statusMessage.type === 'error' && (
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                 )}
-                <span>{statusMessage.text}</span>
+                <span className="truncate">{statusMessage.text}</span>
               </span>
 
               {statusMessage.runUrl && (
@@ -295,15 +264,15 @@ export const WordSearchStudio: React.FC<WordSearchStudioProps> = ({ onOpenSettin
                   href={statusMessage.runUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 inline-flex items-center text-[11px]"
+                  className="text-blue-600 hover:text-blue-800 inline-flex items-center text-[11px] shrink-0 ml-1.5"
                 >
                   <span>View Run</span>
-                  <ExternalLink className="w-3 h-3 ml-1" />
+                  <ExternalLink className="w-3 h-3 ml-0.5" />
                 </a>
               )}
             </div>
             {statusMessage.detail && (
-              <p className="text-[11px] text-gray-600">{statusMessage.detail}</p>
+              <p className="text-[11px] text-gray-600 truncate mt-0.5">{statusMessage.detail}</p>
             )}
           </div>
         )}
