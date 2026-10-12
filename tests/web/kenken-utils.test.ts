@@ -27,11 +27,12 @@ describe('KenKen Web Utilities', () => {
     }
   });
 
-  it('evaluates solved status correctly', () => {
-    const puzzle = SAMPLE_KENKEN_PUZZLES[4];
-    const emptyGrid = createEmptyKenKenGrid(4);
-    expect(isKenKenSolved(emptyGrid, puzzle)).toBe(false);
-
-    expect(isKenKenSolved(puzzle.grid, puzzle)).toBe(true);
+  it('evaluates solved status correctly across all sample puzzle sizes 3 to 9', () => {
+    for (let size = 3; size <= 9; size++) {
+      const puzzle = SAMPLE_KENKEN_PUZZLES[size];
+      const emptyGrid = createEmptyKenKenGrid(size);
+      expect(isKenKenSolved(emptyGrid, puzzle)).toBe(false);
+      expect(isKenKenSolved(puzzle.grid, puzzle)).toBe(true);
+    }
   });
 });
