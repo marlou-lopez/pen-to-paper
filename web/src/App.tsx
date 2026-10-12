@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { SudokuStudio } from './components/SudokuStudio.tsx';
 import { WordSearchStudio } from './components/WordSearchStudio.tsx';
+import { MiniCrosswordStudio } from './components/MiniCrosswordStudio.tsx';
 import { DailyBundle } from './components/DailyBundle.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
 import { PuzzleSelectorModal, ActiveTab } from './components/PuzzleSelectorModal.tsx';
@@ -15,6 +16,7 @@ import { getStoredSettings } from './services/githubApi.ts';
 const TAB_TITLES: Record<ActiveTab, string> = {
   sudoku: '🧩 Sudoku Studio',
   'word-search': '🔍 Word Search',
+  'mini-crossword': '✏️ Mini Crossword Studio',
   daily: '⚡ Daily Pack',
 };
 
@@ -94,6 +96,9 @@ export const App: React.FC = () => {
         )}
         {activeTab === 'word-search' && (
           <WordSearchStudio onOpenSettings={() => setIsSettingsOpen(true)} />
+        )}
+        {activeTab === 'mini-crossword' && (
+          <MiniCrosswordStudio onOpenSettings={() => setIsSettingsOpen(true)} />
         )}
         {activeTab === 'daily' && (
           <DailyBundle onOpenSettings={() => setIsSettingsOpen(true)} />

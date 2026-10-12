@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { X, Grid3X3, Search, Zap, Check } from 'lucide-react';
+import { X, Grid3X3, Search, Zap, Check, Edit3 } from 'lucide-react';
 
-export type ActiveTab = 'sudoku' | 'word-search' | 'daily';
+export type ActiveTab = 'sudoku' | 'word-search' | 'daily' | 'mini-crossword';
 
 interface PuzzleOption {
   id: ActiveTab;
@@ -23,6 +23,13 @@ const PUZZLE_OPTIONS: PuzzleOption[] = [
     title: 'Word Search Studio',
     description: '15 curated offline themes or custom word lists',
     icon: Search,
+  },
+  {
+    id: 'mini-crossword',
+    title: 'Mini Crossword Studio',
+    badge: 'New',
+    description: '5x5 daily crossword with clue inspector & themes',
+    icon: Edit3,
   },
   {
     id: 'daily',
