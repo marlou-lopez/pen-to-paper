@@ -1,13 +1,14 @@
 import { PuzzleRegistry } from './core/registry.js';
 import { WordSearchGenerator } from './puzzles/word-search/index.js';
 import { SudokuGenerator } from './puzzles/sudoku/index.js';
+import { MiniCrosswordGenerator } from './puzzles/mini-crossword/index.js';
 import { LocalDeliveryClient } from './delivery/local-client.js';
 import { RmapiDeliveryClient } from './delivery/rmapi-client.js';
 import { DeliveryClient } from './delivery/types.js';
 import { GeneratedPuzzle } from './core/types.js';
 
 export interface RunOptions {
-  type?: 'all' | 'word-search' | 'sudoku';
+  type?: 'all' | 'word-search' | 'sudoku' | 'mini-crossword';
   difficulty?: string;
   theme?: string;
   date?: string;
@@ -27,6 +28,7 @@ export function createRegistry(): PuzzleRegistry {
   const registry = new PuzzleRegistry();
   registry.register(new WordSearchGenerator());
   registry.register(new SudokuGenerator());
+  registry.register(new MiniCrosswordGenerator());
   return registry;
 }
 

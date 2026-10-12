@@ -9,7 +9,7 @@ describe('Orchestrator runGenerator', () => {
     await fs.rm('./test-cli-output', { recursive: true, force: true });
   });
 
-  it('generates both word-search and sudoku puzzles in local mode', async () => {
+  it('generates word-search, sudoku, and mini-crossword puzzles in local mode when type is all', async () => {
     const results = await runGenerator({
       type: 'all',
       difficulty: 'medium',
@@ -18,8 +18,8 @@ describe('Orchestrator runGenerator', () => {
       outputDir: './test-cli-output',
     });
 
-    expect(results).toHaveLength(2);
-    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku']);
+    expect(results).toHaveLength(3);
+    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku', 'mini-crossword']);
     expect(results[0].deliveredPath).toContain('test-cli-output');
   });
 
@@ -34,6 +34,36 @@ describe('Orchestrator runGenerator', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].puzzle.metadata.id).toBe('sudoku');
+  });
+
+  it('filters by mini-crossword puzzle type when specified', async () => {
+    const results = await runGenerator({
+      type: 'mini-crossword',
+      date: '2026-10-11',
+      upload: false,
+      outputDir: './test-cli-output',
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].puzzle.metadata.id).toBe('mini-crossword');
+  });
+
+  it('routes mini-crossword to /Puzzles/Mini Crossword by default and /Puzzles/Daily when daily option is true', async () => {
+    const defaultResults = await runGenerator({
+      type: 'mini-crossword',
+      date: '2026-10-11',
+      daily: false,
+      outputDir: './test-cli-output',
+    });
+    expect(defaultResults[0].deliveredPath).toContain('Puzzles/Mini Crossword');
+
+    const dailyResults = await runGenerator({
+      type: 'mini-crossword',
+      date: '2026-10-11',
+      daily: true,
+      outputDir: './test-cli-output',
+    });
+    expect(dailyResults[0].deliveredPath).toContain('Puzzles/Daily');
   });
 
   it('throws for unknown puzzle type', async () => {

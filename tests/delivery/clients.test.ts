@@ -121,6 +121,10 @@ describe('Delivery Clients', () => {
       cmd: 'rmapi',
       args: ['mkdir', '/Puzzles/Archive/Sudoku'],
     });
+    expect(execCalls).toContainEqual({
+      cmd: 'rmapi',
+      args: ['mkdir', '/Puzzles/Archive/Mini Crossword'],
+    });
   });
 
   it('LocalDeliveryClient pre-creates archive folders on delivery', async () => {
@@ -132,10 +136,13 @@ describe('Delivery Clients', () => {
 
       const wsArchive = path.join(testDir, 'Puzzles/Archive/Word Search');
       const sudokuArchive = path.join(testDir, 'Puzzles/Archive/Sudoku');
+      const miniCrosswordArchive = path.join(testDir, 'Puzzles/Archive/Mini Crossword');
       const wsStat = await fs.stat(wsArchive);
       const sudokuStat = await fs.stat(sudokuArchive);
+      const miniCrosswordStat = await fs.stat(miniCrosswordArchive);
       expect(wsStat.isDirectory()).toBe(true);
       expect(sudokuStat.isDirectory()).toBe(true);
+      expect(miniCrosswordStat.isDirectory()).toBe(true);
     } finally {
       await fs.rm(testDir, { recursive: true, force: true });
     }

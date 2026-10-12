@@ -15,6 +15,7 @@ on:
           - all
           - word-search
           - sudoku
+          - mini-crossword
       sudoku_difficulty:
         description: 'Sudoku difficulty'
         required: true
@@ -33,6 +34,11 @@ on:
         type: string
       word_search_theme:
         description: 'Word Search theme (optional; blank for dynamic)'
+        required: false
+        default: ''
+        type: string
+      crossword_theme:
+        description: 'Mini Crossword theme (optional; blank for dynamic/seed)'
         required: false
         default: ''
         type: string
@@ -81,13 +87,16 @@ jobs:
       - name: Run puzzle generation & upload
         env:
           THEME_PARAM: ${{ inputs.word_search_theme }}
+          CROSSWORD_THEME: ${{ inputs.crossword_theme }}
           GRID_PARAM: ${{ inputs.sudoku_grid }}
           PUZZLE_TYPE: ${{ inputs.puzzle_type || 'all' }}
           SUDOKU_DIFF: ${{ inputs.sudoku_difficulty || 'random' }}
           IS_DAILY: ${{ inputs.is_daily }}
         run: |
           THEME_FLAG=""
-          if [ -n "$THEME_PARAM" ]; then
+          if [ "$PUZZLE_TYPE" = "mini-crossword" ] && [ -n "$CROSSWORD_THEME" ]; then
+            THEME_FLAG="--theme=$CROSSWORD_THEME"
+          elif [ -n "$THEME_PARAM" ]; then
             THEME_FLAG="--theme=$THEME_PARAM"
           fi
 

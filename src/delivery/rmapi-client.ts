@@ -37,7 +37,7 @@ export class RmapiDeliveryClient implements DeliveryClient {
       }
 
       // Pre-create archive folders
-      const archiveFolders = ['/Puzzles', '/Puzzles/Archive', '/Puzzles/Archive/Word Search', '/Puzzles/Archive/Sudoku'];
+      const archiveFolders = ['/Puzzles', '/Puzzles/Archive', '/Puzzles/Archive/Word Search', '/Puzzles/Archive/Sudoku', '/Puzzles/Archive/Mini Crossword'];
       for (const archivePath of archiveFolders) {
         try {
           childProcess.execFileSync('rmapi', ['mkdir', archivePath], { stdio: 'ignore' });

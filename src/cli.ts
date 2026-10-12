@@ -10,7 +10,7 @@ export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
 
   for (const arg of args) {
     if (arg.startsWith('--type=')) {
-      options.type = arg.slice(arg.indexOf('=') + 1) as any;
+      options.type = arg.slice(arg.indexOf('=') + 1) as RunOptions['type'];
     } else if (arg.startsWith('--difficulty=')) {
       options.difficulty = arg.slice(arg.indexOf('=') + 1);
     } else if (arg.startsWith('--theme=')) {
