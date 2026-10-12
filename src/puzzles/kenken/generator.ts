@@ -3,6 +3,11 @@ import { generateLatinSquare } from './latin-square.js';
 import { partitionCages } from './cages.js';
 import { solveKenKen } from './solver.js';
 import { KenKenData, KenKenOptions } from './types.js';
+import { renderKenKenPdf } from './renderer.js';
+
+export interface KenKenGeneratedPuzzle extends GeneratedPuzzle<KenKenData> {
+  pdfBuffer: Buffer;
+}
 
 export class KenKenGenerator implements PuzzleGenerator<KenKenOptions, KenKenData> {
   readonly metadata: PuzzleMetadata = {
@@ -12,7 +17,7 @@ export class KenKenGenerator implements PuzzleGenerator<KenKenOptions, KenKenDat
   };
   readonly type = 'kenken' as const;
 
-  async generate(options?: KenKenOptions): Promise<GeneratedPuzzle<KenKenData>> {
+  async generate(options?: KenKenOptions): Promise<KenKenGeneratedPuzzle> {
     const size = Math.max(3, Math.min(9, options?.size ?? 6));
     const difficulty = options?.difficulty ?? 'medium';
     const dateStr =
@@ -20,7 +25,8 @@ export class KenKenGenerator implements PuzzleGenerator<KenKenOptions, KenKenDat
     const seed = options?.seed ?? `${dateStr}-${size}-${difficulty}`;
 
     let attempt = 0;
-    while (attempt < 10) {
+    const maxAttempts = size <= 6 ? 10 : 0;
+    while (attempt < maxAttempts) {
       attempt++;
       const currentSeed = `${seed}-${attempt}`;
       const grid = generateLatinSquare(size, currentSeed);
@@ -45,13 +51,16 @@ export class KenKenGenerator implements PuzzleGenerator<KenKenOptions, KenKenDat
         };
 
         const filename = `KenKen_${size}x${size}_${dateStr}.pdf`;
-        return {
+        const puzzle: KenKenGeneratedPuzzle = {
           metadata: this.metadata,
           type: 'kenken',
           title: `KenKen ${size}x${size}`,
           filename,
           puzzleData,
+          pdfBuffer: Buffer.alloc(0),
         };
+        puzzle.pdfBuffer = await this.renderPdf(puzzle);
+        return puzzle;
       }
     }
 
@@ -64,24 +73,28 @@ export class KenKenGenerator implements PuzzleGenerator<KenKenOptions, KenKenDat
     };
     const cages = partitionCages(grid, difficulty, rng);
 
-    return {
+    const puzzleData: KenKenData = {
+      size,
+      grid,
+      cages,
+      date: dateStr,
+      difficulty,
+    };
+
+    const filename = `KenKen_${size}x${size}_${dateStr}.pdf`;
+    const puzzle: KenKenGeneratedPuzzle = {
       metadata: this.metadata,
       type: 'kenken',
       title: `KenKen ${size}x${size}`,
-      filename: `KenKen_${size}x${size}_${dateStr}.pdf`,
-      puzzleData: {
-        size,
-        grid,
-        cages,
-        date: dateStr,
-        difficulty,
-      },
+      filename,
+      puzzleData,
+      pdfBuffer: Buffer.alloc(0),
     };
+    puzzle.pdfBuffer = await this.renderPdf(puzzle);
+    return puzzle;
   }
 
   async renderPdf(puzzle: GeneratedPuzzle<KenKenData>): Promise<Buffer> {
-    // @ts-ignore Dynamic import of renderer.ts (Task 3)
-    const { renderKenKenPdf } = await import('./renderer.js');
     return renderKenKenPdf(puzzle);
   }
 }
