@@ -91,4 +91,34 @@ describe('MiniCrosswordGenerator Data Generation', () => {
     expect(pdfBuffer).toBeInstanceOf(Buffer);
     expect(pdfBuffer.subarray(0, 4).toString()).toBe('%PDF');
   });
+
+  it('executes dynamic solving branch when sufficient theme words are returned', async () => {
+    const originalFetch = globalThis.fetch;
+    try {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { word: 'heart', score: 100, defs: ['n\tVital organ.'] },
+          { word: 'ember', score: 95, defs: ['n\tGlowing coal.'] },
+          { word: 'abuse', score: 90, defs: ['n\tImproper treatment.'] },
+          { word: 'resin', score: 85, defs: ['n\tSticky substance from trees.'] },
+          { word: 'trend', score: 80, defs: ['n\tGeneral direction.'] },
+          { word: 'crane', score: 75, defs: ['n\tTall bird.'] },
+          { word: 'raven', score: 70, defs: ['n\tBlack bird.'] },
+          { word: 'adore', score: 65, defs: ['v\tLove deeply.'] },
+          { word: 'nerve', score: 60, defs: ['n\tFiber that transmits impulses.'] },
+          { word: 'enter', score: 55, defs: ['v\tCome or go into.'] },
+        ],
+      });
+
+      const generator = new MiniCrosswordGenerator();
+      const puzzle = await generator.generateData({ theme: 'Nature', date: '2026-10-12' });
+      expect(puzzle.title).toBe('Mini Crossword - Nature');
+      expect(puzzle.grid).toHaveLength(5);
+      expect(puzzle.acrossClues).toHaveLength(5);
+      expect(puzzle.downClues).toHaveLength(5);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });

@@ -65,8 +65,9 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
       grid: options.grid,
     });
 
-    console.log(`Rendering PDF for ${puzzle.title}...`);
-    const pdfBuffer = await gen.renderPdf(puzzle);
+    const pdfBuffer = ('buffer' in puzzle && Buffer.isBuffer((puzzle as any).buffer))
+      ? (puzzle as any).buffer
+      : await gen.renderPdf(puzzle);
 
     const targetFolder = options.folder ?? (options.daily ? '/Puzzles/Daily' : puzzle.metadata.targetFolder);
     console.log(`Delivering ${puzzle.filename} to ${targetFolder}...`);
