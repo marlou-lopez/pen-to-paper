@@ -39,7 +39,7 @@ export const App: React.FC = () => {
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-200 safe-top">
         <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-7 h-7 rounded-lg bg-gray-950 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="w-7 h-7 rounded-lg bg-gray-950 text-white flex items-center justify-center font-bold text-xs shadow-sm">
               P
             </div>
             <button

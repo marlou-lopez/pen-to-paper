@@ -264,7 +264,7 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
   };
 
   return (
-    <div className="h-full max-w-md mx-auto flex flex-col justify-between py-2 px-3 select-none touch-manipulation">
+    <div className="h-full max-w-md mx-auto flex flex-col justify-between pt-2 pb-2 safe-bottom px-3 select-none touch-manipulation">
       {/* Top / Grid Section */}
       <div className="w-full flex flex-col items-center space-y-1.5">
         {/* Utility Subheader */}
@@ -288,7 +288,7 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
               type="button"
               onClick={handleLoadSample}
               disabled={isBusy}
-              className="px-2 py-1 text-[11px] font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 flex items-center space-x-1 shadow-xs active:scale-95"
+              className="px-2 py-1 text-[11px] font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 flex items-center space-x-1 shadow-sm active:scale-95"
             >
               <Sparkles className="w-3 h-3 text-amber-500" />
               <span>Sample</span>
@@ -428,7 +428,7 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
             <button
               type="button"
               onClick={() => setDigit(null)}
-              className="h-9 min-[380px]:h-10 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 flex items-center justify-center transition-transform active:scale-95 shadow-xs"
+              className="h-9 min-[380px]:h-10 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 flex items-center justify-center transition-transform active:scale-95 shadow-sm"
             >
               Clear
             </button>
@@ -441,7 +441,7 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
             type="button"
             onClick={handleValidate}
             disabled={isBusy}
-            className="h-10 px-4 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 border border-gray-300 font-semibold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5 active:scale-95"
+            className="h-10 px-4 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 border border-gray-300 font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1.5 active:scale-95"
           >
             <Check className="w-4 h-4 text-emerald-600" />
             <span>Check</span>

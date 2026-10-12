@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Grid3X3, Search, Zap, Check } from 'lucide-react';
 
 export type ActiveTab = 'sudoku' | 'word-search' | 'daily';
@@ -46,20 +46,34 @@ export const PuzzleSelectorModal: React.FC<PuzzleSelectorModalProps> = ({
   onSelect,
   onClose,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="puzzle-selector-title"
         className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col p-5 space-y-4 max-h-[85vh] animate-slideUp"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
           <div>
-            <h3 className="text-sm font-bold text-gray-950">Switch Puzzle Studio</h3>
+            <h3 id="puzzle-selector-title" className="text-sm font-bold text-gray-950">Switch Puzzle Studio</h3>
             <p className="text-[11px] text-gray-500">Select a puzzle type to work with</p>
           </div>
           <button
@@ -86,7 +100,7 @@ export const PuzzleSelectorModal: React.FC<PuzzleSelectorModalProps> = ({
                 }}
                 className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between ${
                   isSelected
-                    ? 'border-gray-950 bg-gray-50 text-gray-950 shadow-xs ring-1 ring-gray-950'
+                    ? 'border-gray-950 bg-gray-50 text-gray-950 shadow-sm ring-1 ring-gray-950'
                     : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'
                 }`}
               >

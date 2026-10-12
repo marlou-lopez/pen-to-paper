@@ -213,7 +213,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }`}
               >
                 <div className="text-xs font-bold">Category Folders</div>
-                <div className="text-[10px] text-gray-400 mt-0.5 font-mono">/Puzzles/Sudoku/</div>
+                <div className="text-[10px] text-gray-400 mt-0.5 font-mono">/Puzzles/&lt;Category&gt;/</div>
               </button>
 
               <button
