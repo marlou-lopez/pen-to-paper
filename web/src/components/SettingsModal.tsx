@@ -20,6 +20,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [token, setToken] = useState('');
   const [repo, setRepo] = useState(DEFAULT_REPO);
+  const [defaultDestination, setDefaultDestination] = useState<'category' | 'daily'>('category');
   const [showToken, setShowToken] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -34,6 +35,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const stored = getStoredSettings();
       setToken(stored.token);
       setRepo(stored.repo || DEFAULT_REPO);
+      setDefaultDestination(stored.defaultDestination || 'category');
       setTestResult(null);
       setSaveMessage(false);
     }
@@ -58,7 +60,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleSave = () => {
-    saveStoredSettings({ token: token.trim(), repo: repo.trim() });
+    saveStoredSettings({
+      token: token.trim(),
+      repo: repo.trim(),
+      defaultDestination,
+    });
     setSaveMessage(true);
     setTimeout(() => {
       setSaveMessage(false);
@@ -189,6 +195,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span>Open GitHub Token Settings</span>
               <ExternalLink className="w-3 h-3 ml-1" />
             </a>
+          </div>
+
+          {/* Default Delivery Destination */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">
+              Default Delivery Destination
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setDefaultDestination('category')}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  defaultDestination === 'category'
+                    ? 'border-gray-950 bg-gray-50 text-gray-950 font-semibold ring-1 ring-gray-950'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                }`}
+              >
+                <div className="text-xs font-bold">Category Folders</div>
+                <div className="text-[10px] text-gray-400 mt-0.5 font-mono">/Puzzles/Sudoku/</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDefaultDestination('daily')}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  defaultDestination === 'daily'
+                    ? 'border-gray-950 bg-gray-50 text-gray-950 font-semibold ring-1 ring-gray-950'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                }`}
+              >
+                <div className="text-xs font-bold">Daily Inbox</div>
+                <div className="text-[10px] text-gray-400 mt-0.5 font-mono">/Puzzles/Daily/</div>
+              </button>
+            </div>
+            <p className="text-[11px] text-gray-500">
+              Determines where custom and on-demand puzzles are routed on your reMarkable tablet.
+            </p>
           </div>
         </div>
 

@@ -29,6 +29,7 @@ export interface WorkflowRunsResponse {
 export interface StoredSettings {
   token: string;
   repo: string;
+  defaultDestination?: 'category' | 'daily';
 }
 
 const SETTINGS_KEY = 'pen_to_paper_settings';
@@ -42,6 +43,7 @@ export function getStoredSettings(): StoredSettings {
       return {
         token: parsed.token || '',
         repo: parsed.repo || DEFAULT_REPO,
+        defaultDestination: parsed.defaultDestination === 'daily' ? 'daily' : 'category',
       };
     }
   } catch {
@@ -50,6 +52,7 @@ export function getStoredSettings(): StoredSettings {
   return {
     token: '',
     repo: DEFAULT_REPO,
+    defaultDestination: 'category',
   };
 }
 
