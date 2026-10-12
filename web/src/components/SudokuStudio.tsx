@@ -7,8 +7,6 @@ import {
   Sparkles,
   Loader2,
   ExternalLink,
-  FolderTree,
-  Inbox,
   CheckCircle2,
 } from 'lucide-react';
 import {
@@ -36,7 +34,6 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
   const [grid, setGrid] = useState<SudokuGrid>(createEmptyGrid);
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>([0, 0]);
   const [autoAdvance, setAutoAdvance] = useState(true);
-  const [isDaily, setIsDaily] = useState(false); // default: category folder (/Puzzles/Sudoku/)
   const difficulty = 'expert';
 
   // Status & dispatch state
@@ -161,7 +158,8 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
 
   // Dispatch to GitHub Actions
   const handleSendToRemarkable = async () => {
-    const { token, repo } = getStoredSettings();
+    const { token, repo, defaultDestination } = getStoredSettings();
+    const isDaily = defaultDestination === 'daily';
 
     if (!token) {
       setStatusMessage({
@@ -266,191 +264,194 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4 space-y-4 pb-24">
-      {/* Top Banner / Studio Info */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-gray-950 flex items-center space-x-1.5">
-            <span>Sudoku Studio</span>
-          </h1>
-          <p className="text-xs text-gray-500">Transcribe physical books or create custom grids</p>
-        </div>
-
-        <div className="flex items-center space-x-1.5">
-          <button
-            type="button"
-            onClick={handleLoadSample}
-            disabled={isBusy}
-            title="Load sample puzzle"
-            className="px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center space-x-1 shadow-sm active:scale-95"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>Sample</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleClearBoard}
-            disabled={isBusy}
-            title="Clear grid"
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Destination & Auto-advance Bar */}
-      <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-gray-700">Delivery Destination</span>
-          <div className="flex bg-gray-100 p-0.5 rounded-lg">
-            <button
-              type="button"
-              onClick={() => setIsDaily(false)}
-              className={`px-2.5 py-1 rounded-md font-medium text-xs transition-all flex items-center space-x-1 ${
-                !isDaily ? 'bg-white text-gray-900 shadow-sm font-semibold' : 'text-gray-500'
-              }`}
-            >
-              <FolderTree className="w-3 h-3" />
-              <span>/Puzzles/Sudoku/</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDaily(true)}
-              className={`px-2.5 py-1 rounded-md font-medium text-xs transition-all flex items-center space-x-1 ${
-                isDaily ? 'bg-white text-gray-900 shadow-sm font-semibold' : 'text-gray-500'
-              }`}
-            >
-              <Inbox className="w-3 h-3" />
-              <span>/Puzzles/Daily/</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100">
-          <label className="flex items-center space-x-2 cursor-pointer text-gray-600 select-none">
+    <div className="h-full max-w-md mx-auto flex flex-col justify-between py-2 px-3 select-none touch-manipulation">
+      {/* Top / Grid Section */}
+      <div className="w-full flex flex-col items-center space-y-1.5">
+        {/* Utility Subheader */}
+        <div className="w-full flex items-center justify-between text-xs px-1 text-gray-600">
+          <label className="flex items-center space-x-1.5 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={autoAdvance}
               onChange={(e) => setAutoAdvance(e.target.checked)}
-              className="w-4 h-4 rounded text-gray-900 focus:ring-gray-900 border-gray-300"
+              className="w-3.5 h-3.5 rounded text-gray-900 focus:ring-gray-900 border-gray-300"
             />
-            <span>Auto-advance cursor</span>
+            <span className="text-[11px] font-medium">Auto-advance</span>
           </label>
 
           <span className="text-[11px] text-gray-400 font-mono">
             {cluesCount} / 81 clues
           </span>
+
+          <div className="flex items-center space-x-1.5">
+            <button
+              type="button"
+              onClick={handleLoadSample}
+              disabled={isBusy}
+              className="px-2 py-1 text-[11px] font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 flex items-center space-x-1 shadow-xs active:scale-95"
+            >
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>Sample</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleClearBoard}
+              disabled={isBusy}
+              title="Clear grid"
+              className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* 9x9 Interactive Sudoku Grid */}
-      <div className="flex justify-center select-none touch-manipulation">
-        <div className="bg-gray-950 p-1 rounded-xl shadow-md border-2 border-gray-900">
-          <div className="grid grid-cols-9 bg-gray-300 gap-[1px]">
-            {grid.map((row, r) =>
-              row.map((val, c) => {
-                const isSelected = selectedCell && selectedCell[0] === r && selectedCell[1] === c;
-                const isConflicted = conflicts.has(`${r},${c}`);
-                const isSameRowOrCol =
-                  selectedCell && (selectedCell[0] === r || selectedCell[1] === c);
-                const isSameBox =
-                  selectedCell &&
-                  Math.floor(selectedCell[0] / 3) === Math.floor(r / 3) &&
-                  Math.floor(selectedCell[1] / 3) === Math.floor(c / 3);
+        {/* 9x9 Interactive Sudoku Grid */}
+        <div className="flex justify-center select-none touch-manipulation">
+          <div className="bg-gray-950 p-0.5 min-[380px]:p-1 rounded-xl shadow-md border-2 border-gray-900">
+            <div className="grid grid-cols-9 bg-gray-300 gap-[1px]">
+              {grid.map((row, r) =>
+                row.map((val, c) => {
+                  const isSelected = selectedCell && selectedCell[0] === r && selectedCell[1] === c;
+                  const isConflicted = conflicts.has(`${r},${c}`);
+                  const isSameRowOrCol =
+                    selectedCell && (selectedCell[0] === r || selectedCell[1] === c);
+                  const isSameBox =
+                    selectedCell &&
+                    Math.floor(selectedCell[0] / 3) === Math.floor(r / 3) &&
+                    Math.floor(selectedCell[1] / 3) === Math.floor(c / 3);
 
-                // Thick 3x3 box borders
-                const borderRight = (c + 1) % 3 === 0 && c < 8 ? 'border-r-2 border-r-gray-900' : '';
-                const borderBottom = (r + 1) % 3 === 0 && r < 8 ? 'border-b-2 border-b-gray-900' : '';
+                  // Thick 3x3 box borders
+                  const borderRight = (c + 1) % 3 === 0 && c < 8 ? 'border-r-2 border-r-gray-900' : '';
+                  const borderBottom = (r + 1) % 3 === 0 && r < 8 ? 'border-b-2 border-b-gray-900' : '';
 
-                let cellBg = 'bg-white';
-                if (isConflicted) {
-                  cellBg = 'bg-rose-100 text-rose-700 font-bold';
-                } else if (isSelected) {
-                  cellBg = 'bg-amber-100 font-bold text-gray-950 ring-2 ring-inset ring-amber-500';
-                } else if (isSameRowOrCol || isSameBox) {
-                  cellBg = 'bg-gray-50';
-                }
+                  let cellBg = 'bg-white';
+                  if (isConflicted) {
+                    cellBg = 'bg-rose-100 text-rose-700 font-bold';
+                  } else if (isSelected) {
+                    cellBg = 'bg-amber-100 font-bold text-gray-950 ring-2 ring-inset ring-amber-500';
+                  } else if (isSameRowOrCol || isSameBox) {
+                    cellBg = 'bg-gray-50';
+                  }
 
-                return (
-                  <button
-                    key={`${r}-${c}`}
-                    type="button"
-                    onClick={() => setSelectedCell([r, c])}
-                    className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-base sm:text-lg font-semibold transition-colors focus:outline-none ${cellBg} ${borderRight} ${borderBottom}`}
-                  >
-                    {val !== null ? val : ''}
-                  </button>
-                );
-              })
-            )}
+                  return (
+                    <button
+                      key={`${r}-${c}`}
+                      type="button"
+                      onClick={() => setSelectedCell([r, c])}
+                      className={`w-8 h-8 min-[380px]:w-9 min-[380px]:h-9 min-[420px]:w-10 min-[420px]:h-10 flex items-center justify-center font-semibold text-base focus:outline-none transition-colors ${cellBg} ${borderRight} ${borderBottom}`}
+                    >
+                      {val !== null ? val : ''}
+                    </button>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Conflict / Clues Warning if any */}
-      {conflicts.size > 0 && (
-        <div className="flex items-center space-x-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 px-3 py-2 rounded-xl">
-          <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
-          <span>
-            {conflicts.size} cells have duplicate conflict in row, column, or 3x3 box (highlighted red).
-          </span>
-        </div>
-      )}
-
-      {/* Floating On-Screen Numeric Keypad (1–9, Clear) */}
-      <div className="bg-white p-3 rounded-2xl border border-gray-200 shadow-sm space-y-2">
-        <div className="grid grid-cols-5 gap-2">
-          {[1, 2, 3, 4, 5].map((num) => (
-            <button
-              key={num}
-              type="button"
-              onClick={() => setDigit(num)}
-              className="h-12 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border border-gray-200 rounded-xl text-lg font-bold text-gray-900 flex items-center justify-center transition-transform active:scale-95 shadow-xs"
-            >
-              {num}
-            </button>
-          ))}
-        </div>
-        <div className="grid grid-cols-5 gap-2">
-          {[6, 7, 8, 9].map((num) => (
-            <button
-              key={num}
-              type="button"
-              onClick={() => setDigit(num)}
-              className="h-12 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border border-gray-200 rounded-xl text-lg font-bold text-gray-900 flex items-center justify-center transition-transform active:scale-95 shadow-xs"
-            >
-              {num}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setDigit(null)}
-            className="h-12 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-center transition-transform active:scale-95 shadow-xs"
+      {/* Bottom Controls Section */}
+      <div className="w-full space-y-1.5">
+        {/* Status Toast / Non-Expanding Banner */}
+        {(statusMessage.text || conflicts.size > 0) && (
+          <div
+            className={`px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
+              statusMessage.type === 'error' || (conflicts.size > 0 && !statusMessage.text)
+                ? 'bg-rose-50 border-rose-200 text-rose-900'
+                : statusMessage.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-gray-50 border-gray-200 text-gray-800'
+            }`}
           >
-            Clear
-          </button>
-        </div>
-      </div>
+            <div className="flex items-center justify-between font-medium">
+              <span className="flex items-center space-x-1.5 truncate">
+                {(statusMessage.type === 'running' ||
+                  statusMessage.type === 'dispatching' ||
+                  statusMessage.type === 'validating') && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 shrink-0" />
+                )}
+                {statusMessage.type === 'success' && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                )}
+                {(statusMessage.type === 'error' || (conflicts.size > 0 && !statusMessage.text)) && (
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                )}
+                <span className="truncate">
+                  {statusMessage.text ||
+                    `${conflicts.size} conflicting cell${conflicts.size > 1 ? 's' : ''} in row, col, or box`}
+                </span>
+              </span>
 
-      {/* Validation & Send Actions */}
-      <div className="space-y-2 pt-1">
+              {statusMessage.runUrl && (
+                <a
+                  href={statusMessage.runUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 inline-flex items-center text-[11px] shrink-0 ml-1.5"
+                >
+                  <span>View Run</span>
+                  <ExternalLink className="w-3 h-3 ml-0.5" />
+                </a>
+              )}
+            </div>
+            {statusMessage.detail && (
+              <p className="text-[11px] text-gray-600 truncate mt-0.5">{statusMessage.detail}</p>
+            )}
+          </div>
+        )}
+
+        {/* Floating On-Screen Numeric Keypad (1–9, Clear) */}
+        <div className="bg-white p-2 rounded-xl border border-gray-200 shadow-xs space-y-1.5">
+          <div className="grid grid-cols-5 gap-1.5">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => setDigit(num)}
+                className="h-9 min-[380px]:h-10 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border border-gray-200 rounded-lg text-base min-[380px]:text-lg font-bold text-gray-900 flex items-center justify-center transition-transform active:scale-95 shadow-xs"
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {[6, 7, 8, 9].map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => setDigit(num)}
+                className="h-9 min-[380px]:h-10 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border border-gray-200 rounded-lg text-base min-[380px]:text-lg font-bold text-gray-900 flex items-center justify-center transition-transform active:scale-95 shadow-xs"
+              >
+                {num}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setDigit(null)}
+              className="h-9 min-[380px]:h-10 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 flex items-center justify-center transition-transform active:scale-95 shadow-xs"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
         <div className="flex items-center space-x-2">
           <button
             type="button"
             onClick={handleValidate}
             disabled={isBusy}
-            className="px-4 py-3 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 border border-gray-300 font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1.5"
+            className="h-10 px-4 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 border border-gray-300 font-semibold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5 active:scale-95"
           >
             <Check className="w-4 h-4 text-emerald-600" />
-            <span>Validate</span>
+            <span>Check</span>
           </button>
 
           <button
             type="button"
             onClick={handleSendToRemarkable}
             disabled={isBusy || conflicts.size > 0}
-            className="flex-1 py-3 px-4 bg-gray-950 hover:bg-black active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2"
+            className="h-10 flex-1 px-4 bg-gray-950 hover:bg-black active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2"
           >
             {isBusy ? (
               <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -460,49 +461,6 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
             <span>{isBusy ? 'Processing...' : 'Send to reMarkable'}</span>
           </button>
         </div>
-
-        {/* Live Status Banner */}
-        {statusMessage.text && (
-          <div
-            className={`p-3.5 rounded-xl border text-xs space-y-1 ${
-              statusMessage.type === 'error'
-                ? 'bg-rose-50 border-rose-200 text-rose-900'
-                : statusMessage.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                : 'bg-gray-50 border-gray-200 text-gray-800'
-            }`}
-          >
-            <div className="flex items-center justify-between font-semibold">
-              <span className="flex items-center space-x-1.5">
-                {statusMessage.type === 'running' && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
-                )}
-                {statusMessage.type === 'success' && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                )}
-                {statusMessage.type === 'error' && (
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                )}
-                <span>{statusMessage.text}</span>
-              </span>
-
-              {statusMessage.runUrl && (
-                <a
-                  href={statusMessage.runUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 inline-flex items-center text-[11px]"
-                >
-                  <span>View Run</span>
-                  <ExternalLink className="w-3 h-3 ml-1" />
-                </a>
-              )}
-            </div>
-            {statusMessage.detail && (
-              <p className="text-[11px] text-gray-600">{statusMessage.detail}</p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
