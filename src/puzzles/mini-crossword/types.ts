@@ -1,11 +1,3 @@
-export interface CrosswordCell {
-  row: number;
-  col: number;
-  char: string;
-  clueNumber?: number;
-  isBlocked: boolean;
-}
-
 export interface CrosswordClue {
   number: number;
   direction: 'across' | 'down';
@@ -16,9 +8,19 @@ export interface CrosswordClue {
   length: number;
 }
 
+export interface CrosswordSlot {
+  number: number;
+  direction: 'across' | 'down';
+  startRow: number;
+  startCol: number;
+  length: number;
+  coords: [number, number][];
+}
+
 export interface MiniCrosswordData {
   title: string;
   date: string;
+  templateId?: string;
   grid: string[][];
   acrossClues: CrosswordClue[];
   downClues: CrosswordClue[];
@@ -27,5 +29,4 @@ export interface MiniCrosswordData {
 export interface MiniCrosswordOptions {
   theme?: string;
   date?: string;
-  seed?: number;
 }
