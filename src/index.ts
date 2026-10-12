@@ -1,14 +1,17 @@
-import { PuzzleRegistry } from './core/registry.js';
+import { createDefaultRegistry, PuzzleRegistry } from './core/registry.js';
 import { WordSearchGenerator } from './puzzles/word-search/index.js';
 import { SudokuGenerator } from './puzzles/sudoku/index.js';
 import { MiniCrosswordGenerator } from './puzzles/mini-crossword/index.js';
+import { KenKenGenerator } from './puzzles/kenken/index.js';
 import { LocalDeliveryClient } from './delivery/local-client.js';
 import { RmapiDeliveryClient } from './delivery/rmapi-client.js';
 import { DeliveryClient } from './delivery/types.js';
-import { GeneratedPuzzle } from './core/types.js';
+import { GeneratedPuzzle, PuzzleType } from './core/types.js';
+
+export * from './puzzles/kenken/index.js';
 
 export interface RunOptions {
-  type?: 'all' | 'word-search' | 'sudoku' | 'mini-crossword';
+  type?: 'all' | PuzzleType;
   difficulty?: string;
   theme?: string;
   date?: string;
@@ -17,20 +20,23 @@ export interface RunOptions {
   daily?: boolean;
   folder?: string;
   grid?: string;
+  size?: number;
+  local?: boolean;
 }
 
-export interface GeneratedResult {
-  puzzle: GeneratedPuzzle;
+export interface GeneratedResult<TData = any> {
+  puzzle: GeneratedPuzzle<TData>;
   deliveredPath: string;
+  type?: string;
+  destinationFolder?: string;
+  puzzleData?: TData;
 }
 
 export function createRegistry(): PuzzleRegistry {
-  const registry = new PuzzleRegistry();
-  registry.register(new WordSearchGenerator());
-  registry.register(new SudokuGenerator());
-  registry.register(new MiniCrosswordGenerator());
-  return registry;
+  return createDefaultRegistry();
 }
+
+export { createDefaultRegistry };
 
 export async function runGenerator(options: RunOptions = {}): Promise<GeneratedResult[]> {
   const registry = createRegistry();
@@ -49,7 +55,7 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
   if (options.upload && !rmapiAvailable) {
     console.warn('[WARN] --upload requested but rmapi is not available on PATH; falling back to local delivery.');
   }
-  const useRmapi = Boolean(options.upload && rmapiAvailable);
+  const useRmapi = Boolean(!options.local && options.upload && rmapiAvailable);
   const deliveryClient: DeliveryClient = useRmapi
     ? rmapi
     : new LocalDeliveryClient(options.outputDir || './output');
@@ -63,6 +69,7 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
       difficulty: options.difficulty,
       theme: options.theme,
       grid: options.grid,
+      size: options.size,
     });
 
     const pdfBuffer = ('buffer' in puzzle && Buffer.isBuffer((puzzle as any).buffer))
@@ -73,8 +80,19 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
     console.log(`Delivering ${puzzle.filename} to ${targetFolder}...`);
     const deliveredPath = await deliveryClient.deliver(puzzle.filename, targetFolder, pdfBuffer);
 
-    results.push({ puzzle, deliveredPath });
+    results.push({
+      puzzle,
+      deliveredPath,
+      type: puzzle.metadata.id,
+      destinationFolder: targetFolder,
+      puzzleData: puzzle.puzzleData,
+    });
   }
 
   return results;
 }
+
+export const orchestrator = {
+  runGenerator,
+  createRegistry,
+};

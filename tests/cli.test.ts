@@ -4,12 +4,40 @@ import { runGenerator } from '../src/index';
 import { parseArgs } from '../src/cli';
 import { RmapiDeliveryClient } from '../src/delivery/rmapi-client';
 
+const orchestrator = { runGenerator };
+
 describe('Orchestrator runGenerator', () => {
   afterAll(async () => {
     await fs.rm('./test-cli-output', { recursive: true, force: true });
+    await fs.rm('./output', { recursive: true, force: true });
   });
 
-  it('generates word-search, sudoku, and mini-crossword puzzles in local mode when type is all', async () => {
+  it('filters by kenken puzzle type when specified with custom size', async () => {
+    const result = await orchestrator.runGenerator({ type: 'kenken', size: 5, local: true });
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('kenken');
+    expect(result[0].puzzleData.size).toBe(5);
+  });
+
+  it('routes kenken to /Puzzles/KenKen by default and /Puzzles/Daily when daily option is true', async () => {
+    const defaultRes = await orchestrator.runGenerator({ type: 'kenken', local: true });
+    expect(defaultRes[0].destinationFolder).toBe('/Puzzles/KenKen');
+
+    const dailyRes = await orchestrator.runGenerator({ type: 'kenken', daily: true, local: true });
+    expect(dailyRes[0].destinationFolder).toBe('/Puzzles/Daily');
+  });
+
+  it('generates word-search, sudoku, mini-crossword, and kenken when type is all', async () => {
+    const result = await orchestrator.runGenerator({ type: 'all', local: true });
+    expect(result).toHaveLength(4);
+    const types = result.map((r: any) => r.type);
+    expect(types).toContain('word-search');
+    expect(types).toContain('sudoku');
+    expect(types).toContain('mini-crossword');
+    expect(types).toContain('kenken');
+  });
+
+  it('generates word-search, sudoku, mini-crossword, and kenken puzzles in local mode when type is all', async () => {
     const results = await runGenerator({
       type: 'all',
       difficulty: 'medium',
@@ -18,8 +46,8 @@ describe('Orchestrator runGenerator', () => {
       outputDir: './test-cli-output',
     });
 
-    expect(results).toHaveLength(3);
-    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku', 'mini-crossword']);
+    expect(results).toHaveLength(4);
+    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku', 'mini-crossword', 'kenken']);
     expect(results[0].deliveredPath).toContain('test-cli-output');
   });
 
@@ -149,5 +177,13 @@ describe('CLI parseArgs', () => {
     const options = parseArgs(['--type=sudoku', '--grid=53xx7xxxx/6xx195xxx']);
     expect(options.grid).toBe('53xx7xxxx/6xx195xxx');
     expect(options.type).toBe('sudoku');
+  });
+
+  it('parses --size for kenken and defaults to 6 if not provided when type is kenken', () => {
+    const options = parseArgs(['--type=kenken']);
+    expect(options.size).toBe(6);
+
+    const custom = parseArgs(['--type=kenken', '--size=4']);
+    expect(custom.size).toBe(4);
   });
 });

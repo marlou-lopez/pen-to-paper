@@ -1,3 +1,5 @@
+export type PuzzleType = 'word-search' | 'sudoku' | 'mini-crossword' | 'kenken';
+
 export interface PuzzleMetadata {
   id: string;
   displayName: string;

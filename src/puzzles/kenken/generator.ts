@@ -2,7 +2,7 @@ import { GeneratedPuzzle, PuzzleGenerator, PuzzleMetadata } from '../../core/typ
 import { generateLatinSquare } from './latin-square.js';
 import { partitionCages } from './cages.js';
 import { solveKenKen } from './solver.js';
-import { KenKenData, KenKenOptions } from './types.js';
+import { KenKenData, KenKenDifficulty, KenKenOptions } from './types.js';
 import { renderKenKenPdf } from './renderer.js';
 
 export interface KenKenGeneratedPuzzle extends GeneratedPuzzle<KenKenData> {
@@ -19,7 +19,11 @@ export class KenKenGenerator implements PuzzleGenerator<KenKenOptions, KenKenDat
 
   async generate(options?: KenKenOptions): Promise<KenKenGeneratedPuzzle> {
     const size = Math.max(3, Math.min(9, options?.size ?? 6));
-    const difficulty = options?.difficulty ?? 'medium';
+    const validDifficulties: KenKenDifficulty[] = ['easy', 'medium', 'hard'];
+    const difficulty: KenKenDifficulty =
+      options?.difficulty && validDifficulties.includes(options.difficulty as KenKenDifficulty)
+        ? (options.difficulty as KenKenDifficulty)
+        : 'medium';
     const dateStr =
       options?.date ?? new Date().toISOString().slice(0, 10);
     const seed = options?.seed ?? `${dateStr}-${size}-${difficulty}`;

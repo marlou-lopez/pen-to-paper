@@ -30,6 +30,20 @@ export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
       if (!options.type) {
         options.type = 'sudoku';
       }
+    } else if (arg.startsWith('--size=')) {
+      const parsedSize = parseInt(arg.slice(arg.indexOf('=') + 1), 10);
+      if (!isNaN(parsedSize)) {
+        options.size = Math.max(3, Math.min(9, parsedSize));
+      }
+    }
+  }
+
+  if (options.type === 'kenken') {
+    if (options.size === undefined) {
+      options.size = 6;
+    }
+    if (options.difficulty === 'random') {
+      options.difficulty = 'medium';
     }
   }
 
