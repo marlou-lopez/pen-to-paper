@@ -1,7 +1,9 @@
-import { GeneratedPuzzle, PuzzleGenerator, PuzzleMetadata } from '../../core/types.js';
+import { GeneratedPuzzle, PuzzleGenerator, PuzzleMetadata, PuzzleResult } from '../../core/types.js';
 import { CrosswordClue, MiniCrosswordData, MiniCrosswordOptions } from './types.js';
 import { getSeedCrosswordForDate, SEED_CROSSWORDS } from './seed-bank.js';
 import { fetchWordsWithDefinitions } from './clue-fetcher.js';
+import { renderMiniCrosswordPdf } from './renderer.js';
+
 
 const ACROSS_NUMBERS = [1, 6, 7, 8, 9];
 const DOWN_NUMBERS = [1, 2, 3, 4, 5];
@@ -169,29 +171,40 @@ export class MiniCrosswordGenerator implements PuzzleGenerator<MiniCrosswordOpti
    */
   async generate(
     options?: MiniCrosswordOptions
-  ): Promise<GeneratedPuzzle<MiniCrosswordData> & { type: string; buffer: Buffer }> {
+  ): Promise<PuzzleResult<MiniCrosswordData>> {
     const data = await this.generateData(options);
-    const buffer = await this.renderPdf({
-      metadata: this.metadata,
-      title: data.title,
-      filename: `MiniCrossword_${data.date}.pdf`,
-      puzzleData: data,
-    });
+    const themeSuffix = options?.theme && options.theme.trim().length > 0
+      ? `_${options.theme.trim().replace(/\s+/g, '_')}`
+      : '';
+    const filename = `MiniCrossword_${data.date}${themeSuffix}.pdf`;
 
-    return {
-      metadata: this.metadata,
+    const puzzle: GeneratedPuzzle<MiniCrosswordData> = {
+      metadata: {
+        ...this.metadata,
+        date: data.date,
+      },
       type: this.type,
       title: data.title,
-      filename: `MiniCrossword_${data.date}.pdf`,
+      filename,
       puzzleData: data,
+    };
+    const buffer = await this.renderPdf(puzzle);
+
+    return {
+      ...puzzle,
+      type: this.type,
       buffer,
+      metadata: {
+        ...this.metadata,
+        date: data.date,
+      },
     };
   }
 
   /**
-   * Renders PDF buffer for the puzzle (stubbed for Task 3 integration).
+   * Renders PDF buffer for the puzzle using PdfBuilder.
    */
-  async renderPdf(_puzzle: GeneratedPuzzle<MiniCrosswordData>): Promise<Buffer> {
-    return Buffer.from('%PDF-1.4\n');
+  async renderPdf(puzzle: GeneratedPuzzle<MiniCrosswordData>): Promise<Buffer> {
+    return renderMiniCrosswordPdf(puzzle);
   }
 }
