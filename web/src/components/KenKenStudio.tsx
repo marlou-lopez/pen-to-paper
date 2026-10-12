@@ -589,7 +589,13 @@ export const KenKenStudio: React.FC<KenKenStudioProps> = ({ onOpenSettings }) =>
                       : 'text-sm font-bold';
 
                   const clueFontSize =
-                    size <= 5 ? 'text-[10px]' : 'text-[8px] min-[380px]:text-[9px]';
+                    size <= 4
+                      ? 'text-sm'
+                      : size <= 6
+                      ? 'text-xs'
+                      : size <= 7
+                      ? 'text-[11px]'
+                      : 'text-[10px]';
 
                   return (
                     <button
@@ -602,7 +608,7 @@ export const KenKenStudio: React.FC<KenKenStudioProps> = ({ onOpenSettings }) =>
                       {/* Cage clue in upper-left corner */}
                       {clueText && (
                         <span
-                          className={`absolute top-0.5 left-0.5 font-bold text-gray-800 leading-none select-none pointer-events-none ${clueFontSize}`}
+                          className={`absolute top-0.5 left-1 font-extrabold text-gray-950 leading-none select-none pointer-events-none ${clueFontSize}`}
                         >
                           {clueText}
                         </span>

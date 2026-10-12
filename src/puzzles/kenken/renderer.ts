@@ -4,8 +4,10 @@ import { KenKenCage, KenKenData } from './types.js';
 
 function formatOpBadge(cage: KenKenCage): string {
   if (cage.op === 'none') return `${cage.target}`;
+  // Note: U+2212 (minus) is not in PDFKit's built-in Helvetica (WinAnsi) encoding and
+  // renders as a stray quote mark, so use an en dash (U+2013) which is supported.
   const opSymbol =
-    cage.op === '+' ? '+' : cage.op === '-' ? '−' : cage.op === '*' ? '×' : '÷';
+    cage.op === '+' ? '+' : cage.op === '-' ? '–' : cage.op === '*' ? '×' : '÷';
   return `${cage.target}${opSymbol}`;
 }
 
@@ -50,12 +52,12 @@ export function renderKenKenPdf(
     if (!isSolution) {
       activeDoc
         .font('Helvetica')
-        .fontSize(16)
-        .fillColor('#444444')
+        .fontSize(22)
+        .fillColor('#333333')
         .text(
           `Fill with digits 1-${size} without repeats in rows/cols. Bold cages must compute to target number.`,
           PAGE_MARGIN,
-          startY - 40,
+          startY - 48,
           { width: PAGE_WIDTH - PAGE_MARGIN * 2, align: 'center' }
         );
     }
@@ -133,17 +135,19 @@ export function renderKenKenPdf(
       .strokeColor('#000000')
       .stroke();
 
-    // Draw cage clue badges
-    const badgeFontSize = size <= 4 ? 18 : size <= 6 ? 15 : 12;
+    // Draw cage clue badges (scaled to cell size so they stay legible on e-ink)
+    const badgeFontSize = Math.round(Math.min(48, Math.max(24, cellSize * 0.22)));
+    const badgePadX = Math.round(cellSize * 0.06);
+    const badgePadY = Math.round(cellSize * 0.05);
     for (const cage of data.cages) {
       const anchor = cageAnchorCells.get(cage.id);
       if (!anchor) continue;
-      const x = startX + anchor.col * cellSize + 5;
-      const y = startY + anchor.row * cellSize + 4;
+      const x = startX + anchor.col * cellSize + badgePadX;
+      const y = startY + anchor.row * cellSize + badgePadY;
       activeDoc
         .font('Helvetica-Bold')
         .fontSize(badgeFontSize)
-        .fillColor(isSolution ? '#666666' : '#000000')
+        .fillColor(isSolution ? '#555555' : '#000000')
         .text(formatOpBadge(cage), x, y, { lineBreak: false });
     }
 
