@@ -50,6 +50,10 @@ export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
   } else if (options.type === 'kakuro') {
     if (options.size === undefined) {
       options.size = 8;
+    } else {
+      if (options.size <= 6) options.size = 6;
+      else if (options.size <= 8) options.size = 8;
+      else options.size = 10;
     }
     if (options.difficulty === 'random') {
       options.difficulty = 'medium';
