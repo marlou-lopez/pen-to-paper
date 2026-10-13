@@ -161,4 +161,80 @@ describe('Delivery Clients', () => {
       await fs.rm(testDir, { recursive: true, force: true });
     }
   });
+
+  it('RmapiDeliveryClient caches remote directories and avoids redundant mkdir calls across deliveries', async () => {
+    const execCalls: { cmd: string; args: string[] }[] = [];
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      execCalls.push({ cmd, args: args ?? [] });
+      return Buffer.from('');
+    });
+
+    const client = new RmapiDeliveryClient({ throttleMs: 0 });
+    const buffer = Buffer.from('pdf-data');
+
+    await client.deliver('Puzzle1.pdf', '/Puzzles/Daily', buffer);
+    const mkdirCallsFirst = execCalls.filter(c => c.cmd === 'rmapi' && c.args[0] === 'mkdir');
+    expect(mkdirCallsFirst.length).toBeGreaterThan(0);
+
+    // Second delivery using the same client to the same folder
+    await client.deliver('Puzzle2.pdf', '/Puzzles/Daily', buffer);
+    const mkdirCallsAfterSecond = execCalls.filter(c => c.cmd === 'rmapi' && c.args[0] === 'mkdir');
+    expect(mkdirCallsAfterSecond.length).toBe(mkdirCallsFirst.length);
+  });
+
+  it('RmapiDeliveryClient retries put operation with backoff when transient failure occurs', async () => {
+    let putAttempts = 0;
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      if (cmd === 'rmapi' && args?.[0] === 'put') {
+        putAttempts++;
+        if (putAttempts === 1) {
+          throw new Error('failed to create user token from device token request failed with status 429');
+        }
+      }
+      return Buffer.from('');
+    });
+
+    const client = new RmapiDeliveryClient({ maxRetries: 3, initialDelayMs: 1, backoffFactor: 1, throttleMs: 0 });
+    const buffer = Buffer.from('test-retry-data');
+    const deliveredPath = await client.deliver('Retry.pdf', '/Puzzles/Daily', buffer);
+
+    expect(deliveredPath).toBe('/Puzzles/Daily/Retry.pdf');
+    expect(putAttempts).toBe(2);
+  });
+
+  it('RmapiDeliveryClient fails when put retries exceed maxRetries', async () => {
+    let putAttempts = 0;
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      if (cmd === 'rmapi' && args?.[0] === 'put') {
+        putAttempts++;
+        throw new Error('persistent 429 rate limit error');
+      }
+      return Buffer.from('');
+    });
+
+    const client = new RmapiDeliveryClient({ maxRetries: 2, initialDelayMs: 1, backoffFactor: 1, throttleMs: 0 });
+    const buffer = Buffer.from('test-fail-data');
+    await expect(client.deliver('Fail.pdf', '/Puzzles/Daily', buffer)).rejects.toThrow('persistent 429 rate limit error');
+    expect(putAttempts).toBe(2);
+  });
+
+  it('RmapiDeliveryClient can reset folder cache via resetFolderCache', async () => {
+    const execCalls: { cmd: string; args: string[] }[] = [];
+    vi.spyOn(childProcess, 'execFileSync').mockImplementation((cmd: string, args?: any) => {
+      execCalls.push({ cmd, args: args ?? [] });
+      return Buffer.from('');
+    });
+
+    const client = new RmapiDeliveryClient({ throttleMs: 0 });
+    const buffer = Buffer.from('pdf-data');
+
+    await client.deliver('Puzzle1.pdf', '/Puzzles/Daily', buffer);
+    const firstCount = execCalls.filter(c => c.cmd === 'rmapi' && c.args[0] === 'mkdir').length;
+
+    client.resetFolderCache();
+    await client.deliver('Puzzle2.pdf', '/Puzzles/Daily', buffer);
+    const secondCount = execCalls.filter(c => c.cmd === 'rmapi' && c.args[0] === 'mkdir').length;
+    expect(secondCount).toBe(firstCount * 2);
+  });
 });
+
