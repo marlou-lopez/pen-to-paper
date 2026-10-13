@@ -1,4 +1,4 @@
-import { PdfBuilder, PAGE_MARGIN, PAGE_WIDTH, PAGE_HEIGHT } from '../../core/pdf-builder.js';
+import { PdfBuilder, PAGE_MARGIN, PAGE_WIDTH } from '../../core/pdf-builder.js';
 import { GeneratedPuzzle } from '../../core/types.js';
 import { KenKenCage, KenKenData } from './types.js';
 
@@ -9,6 +9,28 @@ function formatOpBadge(cage: KenKenCage): string {
   const opSymbol =
     cage.op === '+' ? '+' : cage.op === '-' ? '–' : cage.op === '*' ? '×' : '÷';
   return `${cage.target}${opSymbol}`;
+}
+
+export function getKenKenLayout(size: number) {
+  const targetBoardSize = 960;
+  const cellSize = Math.floor(targetBoardSize / size);
+  const boardSize = cellSize * size;
+  const startX = Math.floor((PAGE_WIDTH - boardSize) / 2);
+  const startY = 240;
+  const badgeFontSize = size <= 4 ? 30 : size <= 6 ? 24 : 18;
+  const digitFontSize = size <= 4 ? 70 : size <= 6 ? 56 : 42;
+  const rulesY = startY + boardSize + 40;
+
+  return {
+    targetBoardSize,
+    cellSize,
+    boardSize,
+    startX,
+    startY,
+    badgeFontSize,
+    digitFontSize,
+    rulesY,
+  };
 }
 
 export function renderKenKenPdf(
@@ -23,11 +45,15 @@ export function renderKenKenPdf(
   const doc = builder.getDoc();
 
   // Grid sizing calculations
-  const maxBoardDim = Math.min(PAGE_WIDTH - PAGE_MARGIN * 2, PAGE_HEIGHT - PAGE_MARGIN * 2 - 240);
-  const cellSize = Math.floor(maxBoardDim / size);
-  const boardSize = cellSize * size;
-  const startX = Math.floor((PAGE_WIDTH - boardSize) / 2);
-  const startY = PAGE_MARGIN + 160;
+  const {
+    cellSize,
+    boardSize,
+    startX,
+    startY,
+    badgeFontSize,
+    digitFontSize,
+    rulesY,
+  } = getKenKenLayout(size);
 
   // Build cell to cage mapping
   const cellToCageId = new Map<string, number>();
@@ -57,7 +83,7 @@ export function renderKenKenPdf(
         .text(
           `Fill with digits 1-${size} without repeats in rows/cols. Bold cages must compute to target number.`,
           PAGE_MARGIN,
-          startY - 48,
+          rulesY,
           { width: PAGE_WIDTH - PAGE_MARGIN * 2, align: 'center' }
         );
     }
@@ -136,7 +162,6 @@ export function renderKenKenPdf(
       .stroke();
 
     // Draw cage clue badges (scaled to cell size so they stay legible on e-ink)
-    const badgeFontSize = Math.round(Math.min(48, Math.max(24, cellSize * 0.22)));
     const badgePadX = Math.round(cellSize * 0.06);
     const badgePadY = Math.round(cellSize * 0.05);
     for (const cage of data.cages) {
@@ -153,7 +178,6 @@ export function renderKenKenPdf(
 
     // If solution page, draw numbers centered
     if (isSolution) {
-      const numFontSize = Math.floor(cellSize * 0.52);
       for (let r = 0; r < size; r++) {
         for (let c = 0; c < size; c++) {
           const val = data.grid[r][c];
@@ -161,7 +185,7 @@ export function renderKenKenPdf(
           const y = startY + r * cellSize + Math.floor(cellSize * 0.22);
           activeDoc
             .font('Helvetica-Bold')
-            .fontSize(numFontSize)
+            .fontSize(digitFontSize)
             .fillColor('#000000')
             .text(`${val}`, x, y, { width: cellSize, align: 'center' });
         }

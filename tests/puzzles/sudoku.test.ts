@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { SudokuGenerator, resolveSudokuDifficulty } from '../../src/puzzles/sudoku/generator';
+import { renderSudokuPdf, SUDOKU_LAYOUT } from '../../src/puzzles/sudoku/renderer';
+import { PdfBuilder } from '../../src/core/pdf-builder';
 
 describe('SudokuGenerator', () => {
   it('resolves difficulty rotating by day-of-week when set to random', () => {
@@ -68,4 +70,48 @@ describe('SudokuGenerator', () => {
     expect(puzzle.puzzleData.puzzleGrid[0][0]).toBe(5);
     expect(puzzle.puzzleData.solutionGrid[0][2]).toBe(4);
   });
+
+  it('renders with standardized startY = 240 pt anchor and 990 pt boardSize across 3 pages', async () => {
+    expect(SUDOKU_LAYOUT.startY).toBe(240);
+    expect(SUDOKU_LAYOUT.boardSize).toBe(990);
+    expect(SUDOKU_LAYOUT.startX).toBe(207);
+    expect(SUDOKU_LAYOUT.cellSize).toBe(110);
+
+    const generator = new SudokuGenerator();
+    const result = await generator.generate({ date: '2026-10-11', difficulty: 'medium' });
+
+    let outerFrameRect: { x: number; y: number; w: number; h: number } | undefined;
+    const origGetDoc = PdfBuilder.prototype.getDoc;
+    const spy = vi.spyOn(PdfBuilder.prototype, 'getDoc').mockImplementation(function (this: any) {
+      const doc = origGetDoc.call(this);
+      const origRect = doc.rect.bind(doc);
+      doc.rect = (x: number, y: number, w: number, h: number) => {
+        if (!outerFrameRect) {
+          outerFrameRect = { x, y, w, h };
+        }
+        return origRect(x, y, w, h);
+      };
+      return doc;
+    });
+
+    try {
+      const pdfBuffer = await renderSudokuPdf(result);
+      expect(pdfBuffer).toBeInstanceOf(Buffer);
+
+      // Outer frame is drawn at startX - 2, startY - 2, boardSize + 4, boardSize + 4
+      expect(outerFrameRect).toBeDefined();
+      expect(outerFrameRect?.x).toBe(205); // startX = (1404 - 990) / 2 = 207 -> 207 - 2 = 205
+      expect(outerFrameRect?.y).toBe(238); // startY = 240 -> 240 - 2 = 238
+      expect(outerFrameRect?.w).toBe(994); // boardSize = 990 -> 990 + 4 = 994
+      expect(outerFrameRect?.h).toBe(994);
+
+      // Verify 3 pages generated cleanly
+      const pdfText = pdfBuffer.toString('binary');
+      const pageMatches = pdfText.match(/\/Type\s*\/Page\b/g);
+      expect(pageMatches?.length).toBe(3);
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });
+

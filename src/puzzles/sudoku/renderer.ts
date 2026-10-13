@@ -1,6 +1,13 @@
-import { PdfBuilder, PAGE_MARGIN, PAGE_WIDTH } from '../../core/pdf-builder.js';
+import { PdfBuilder, PAGE_WIDTH } from '../../core/pdf-builder.js';
 import { GeneratedPuzzle } from '../../core/types.js';
 import { SudokuData } from './generator.js';
+
+export const SUDOKU_LAYOUT = {
+  cellSize: 110,
+  boardSize: 110 * 9,
+  startX: (PAGE_WIDTH - 110 * 9) / 2,
+  startY: 240,
+} as const;
 
 export function renderSudokuPdf(puzzle: GeneratedPuzzle<SudokuData>): Promise<Buffer> {
   const { difficulty, puzzleGrid, solutionGrid } = puzzle.puzzleData;
@@ -10,10 +17,10 @@ export function renderSudokuPdf(puzzle: GeneratedPuzzle<SudokuData>): Promise<Bu
   const builder = new PdfBuilder('Sudoku', `Difficulty: ${capitalizedDifficulty}`, dateStr);
   const doc = builder.getDoc();
 
-  const cellSize = 110;
-  const boardSize = cellSize * 9;
-  const startX = (PAGE_WIDTH - boardSize) / 2;
-  const startY = PAGE_MARGIN + 220;
+  const cellSize = SUDOKU_LAYOUT.cellSize;
+  const boardSize = SUDOKU_LAYOUT.boardSize;
+  const startX = SUDOKU_LAYOUT.startX;
+  const startY = SUDOKU_LAYOUT.startY;
 
   function drawBoard(grid: (number | null)[][], isSolution = false) {
     const activeDoc = isSolution ? builder.getDoc() : doc;
