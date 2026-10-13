@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { X, Grid3X3, Search, Zap, Check, Edit3, Calculator, Hash } from 'lucide-react';
+import { X, Grid3X3, Search, Zap, Check, Edit3, Calculator, Hash, ChevronsUpDown } from 'lucide-react';
 
-export type ActiveTab = 'sudoku' | 'word-search' | 'daily' | 'mini-crossword' | 'kenken' | 'kakuro';
+export type ActiveTab = 'sudoku' | 'word-search' | 'daily' | 'mini-crossword' | 'kenken' | 'kakuro' | 'futoshiki';
 
 interface PuzzleOption {
   id: ActiveTab;
@@ -30,6 +30,13 @@ const PUZZLE_OPTIONS: PuzzleOption[] = [
     badge: 'New',
     description: 'Cross sums puzzles with diagonal clue inspector',
     icon: Hash,
+  },
+  {
+    id: 'futoshiki',
+    title: 'Futoshiki Studio',
+    badge: 'New',
+    description: 'Inequality Latin square puzzles with live chevron validation',
+    icon: ChevronsUpDown,
   },
   {
     id: 'word-search',

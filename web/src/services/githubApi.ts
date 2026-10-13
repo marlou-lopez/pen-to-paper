@@ -3,7 +3,7 @@ export interface DispatchOptions {
   repo: string; // e.g. "marlou-lopez/pen-to-paper"
   ref?: string; // e.g. "main"
   inputs: {
-    puzzle_type: 'all' | 'sudoku' | 'word-search' | 'mini-crossword' | 'kenken' | 'kakuro';
+    puzzle_type: 'all' | 'sudoku' | 'word-search' | 'mini-crossword' | 'kenken' | 'kakuro' | 'futoshiki';
     sudoku_difficulty?: string;
     sudoku_grid?: string;
     word_search_theme?: string;
@@ -12,6 +12,8 @@ export interface DispatchOptions {
     kenken_difficulty?: string;
     kakuro_size?: string;
     kakuro_difficulty?: string;
+    futoshiki_size?: string;
+    futoshiki_difficulty?: string;
     is_daily?: boolean;
   };
 }
@@ -134,6 +136,8 @@ export async function dispatchWorkflow(opts: DispatchOptions): Promise<void> {
       kenken_difficulty: opts.inputs.kenken_difficulty || 'medium',
       kakuro_size: opts.inputs.kakuro_size || '8',
       kakuro_difficulty: opts.inputs.kakuro_difficulty || 'medium',
+      futoshiki_size: opts.inputs.futoshiki_size || '5',
+      futoshiki_difficulty: opts.inputs.futoshiki_difficulty || 'medium',
       is_daily: String(opts.inputs.is_daily !== false),
     },
   };

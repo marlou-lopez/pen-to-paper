@@ -171,3 +171,69 @@ describe('Workflow Dispatch for KenKen', () => {
     expect(capturedBody.inputs.is_daily).toBe('true');
   });
 });
+
+describe('Workflow Dispatch for Futoshiki', () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('dispatches futoshiki with futoshiki_size and futoshiki_difficulty', async () => {
+    let capturedUrl = '';
+    let capturedBody: any = null;
+
+    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+      capturedUrl = url;
+      capturedBody = JSON.parse(init?.body as string);
+      return {
+        ok: true,
+        status: 204,
+      } as Response;
+    }) as any;
+
+    await dispatchWorkflow({
+      token: 'ghp_secret',
+      repo: 'marlou-lopez/pen-to-paper',
+      inputs: {
+        puzzle_type: 'futoshiki',
+        futoshiki_size: '6',
+        futoshiki_difficulty: 'hard',
+        is_daily: false,
+      },
+    });
+
+    expect(capturedUrl).toContain('/actions/workflows/daily-puzzles.yml/dispatches');
+    expect(capturedBody.inputs.puzzle_type).toBe('futoshiki');
+    expect(capturedBody.inputs.futoshiki_size).toBe('6');
+    expect(capturedBody.inputs.futoshiki_difficulty).toBe('hard');
+    expect(capturedBody.inputs.is_daily).toBe('false');
+  });
+
+  it('dispatches futoshiki with default size 5 and medium difficulty when not specified', async () => {
+    let capturedBody: any = null;
+
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+      capturedBody = JSON.parse(init?.body as string);
+      return {
+        ok: true,
+        status: 204,
+      } as Response;
+    }) as any;
+
+    await dispatchWorkflow({
+      token: 'ghp_secret',
+      repo: 'marlou-lopez/pen-to-paper',
+      inputs: {
+        puzzle_type: 'futoshiki',
+        is_daily: true,
+      },
+    });
+
+    expect(capturedBody.inputs.puzzle_type).toBe('futoshiki');
+    expect(capturedBody.inputs.futoshiki_size).toBe('5');
+    expect(capturedBody.inputs.futoshiki_difficulty).toBe('medium');
+    expect(capturedBody.inputs.is_daily).toBe('true');
+  });
+});
+
