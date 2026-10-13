@@ -392,7 +392,7 @@ export const FutoshikiStudio: React.FC<FutoshikiStudioProps> = ({ onOpenSettings
   ).join(' ');
 
   return (
-    <div className="flex flex-col h-full max-w-md mx-auto px-3.5 py-1.5 justify-between safe-bottom select-none">
+    <div className="h-full max-w-md mx-auto flex flex-col justify-between pt-2 pb-2 safe-bottom px-3 select-none touch-manipulation">
       {/* Top Controls Area */}
       <div className="space-y-1.5">
         {/* Header Bar: Title & Size Switcher */}
@@ -529,11 +529,8 @@ export const FutoshikiStudio: React.FC<FutoshikiStudioProps> = ({ onOpenSettings
         )}
 
         {/* Responsive Futoshiki Grid with Inter-cell Chevrons */}
-        <div className="w-full flex justify-center items-center py-1 select-none">
-          <div
-            className="w-full max-w-[325px] aspect-square bg-gray-50 p-2 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-center"
-            style={{ touchAction: 'manipulation' }}
-          >
+        <div className="w-full max-w-[350px] mx-auto flex justify-center items-center py-1 select-none touch-manipulation">
+          <div className="w-full max-w-[350px] aspect-square bg-gray-50 p-2 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-center">
             <div
               className="w-full h-full grid items-stretch"
               style={{

@@ -306,9 +306,9 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
         </div>
 
         {/* 9x9 Interactive Sudoku Grid */}
-        <div className="flex justify-center select-none touch-manipulation">
-          <div className="bg-gray-950 p-0.5 min-[380px]:p-1 rounded-xl shadow-md border-2 border-gray-900">
-            <div className="grid grid-cols-9 bg-gray-300 gap-[1px]">
+        <div className="w-full max-w-[350px] mx-auto flex justify-center items-center py-1 select-none touch-manipulation">
+          <div className="w-full max-w-[350px] aspect-square bg-gray-950 p-0.5 min-[380px]:p-1 rounded-xl shadow-md border-2 border-gray-900 flex flex-col">
+            <div className="w-full h-full grid grid-cols-9 bg-gray-300 gap-[1px]">
               {grid.map((row, r) =>
                 row.map((val, c) => {
                   const isSelected = selectedCell && selectedCell[0] === r && selectedCell[1] === c;
@@ -338,7 +338,7 @@ export const SudokuStudio: React.FC<SudokuStudioProps> = ({ onOpenSettings }) =>
                       key={`${r}-${c}`}
                       type="button"
                       onClick={() => setSelectedCell([r, c])}
-                      className={`w-8 h-8 min-[380px]:w-9 min-[380px]:h-9 min-[420px]:w-10 min-[420px]:h-10 flex items-center justify-center font-semibold text-base focus:outline-none transition-colors ${cellBg} ${borderRight} ${borderBottom}`}
+                      className={`w-full h-full flex items-center justify-center font-semibold text-base focus:outline-none transition-colors ${cellBg} ${borderRight} ${borderBottom}`}
                     >
                       {val !== null ? val : ''}
                     </button>

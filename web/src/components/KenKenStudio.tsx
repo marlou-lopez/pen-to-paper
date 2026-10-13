@@ -411,7 +411,7 @@ export const KenKenStudio: React.FC<KenKenStudioProps> = ({ onOpenSettings }) =>
   }, [size, keypadNumbers]);
 
   return (
-    <div className="h-full max-w-md mx-auto flex flex-col justify-between pt-1.5 pb-2 safe-bottom px-3 select-none touch-manipulation">
+    <div className="h-full max-w-md mx-auto flex flex-col justify-between pt-2 pb-2 safe-bottom px-3 select-none touch-manipulation">
       {/* Top Header & Settings Chips */}
       <div className="w-full flex flex-col items-center space-y-1.5">
         {/* Size chips & Difficulty bar */}
@@ -544,11 +544,8 @@ export const KenKenStudio: React.FC<KenKenStudioProps> = ({ onOpenSettings }) =>
         )}
 
         {/* Interactive Responsive KenKen Grid */}
-        <div className="w-full flex justify-center items-center py-1 select-none">
-          <div
-            className="w-full max-w-[320px] aspect-square bg-gray-950 p-[2px] rounded-xl shadow-md border-2 border-gray-950 flex flex-col"
-            style={{ touchAction: 'manipulation' }}
-          >
+        <div className="w-full max-w-[350px] mx-auto flex justify-center items-center py-1 select-none touch-manipulation">
+          <div className="w-full max-w-[350px] aspect-square bg-gray-950 p-[2px] rounded-xl shadow-md border-2 border-gray-950 flex flex-col">
             <div
               className="w-full h-full grid"
               style={{

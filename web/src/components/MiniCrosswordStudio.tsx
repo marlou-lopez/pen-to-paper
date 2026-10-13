@@ -535,16 +535,16 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
         </div>
 
         {/* 5x5 Interactive Grid */}
-        <div className="flex justify-center select-none touch-manipulation">
-          <div className="bg-gray-950 p-1 rounded-xl shadow-md border-2 border-gray-900 inline-block">
-            <div className="grid grid-cols-5 bg-gray-900 gap-[1px]">
+        <div className="w-full max-w-[350px] mx-auto flex justify-center items-center py-1 select-none touch-manipulation">
+          <div className="w-full max-w-[350px] aspect-square bg-gray-950 p-1 rounded-xl shadow-md border-2 border-gray-900 flex flex-col">
+            <div className="w-full h-full grid grid-cols-5 bg-gray-900 gap-[1px]">
               {currentPuzzle.grid.map((row, r) =>
                 row.map((solutionChar, c) => {
                   if (solutionChar === '#') {
                     return (
                       <div
                         key={`${r}-${c}`}
-                        className="w-14 h-14 min-[380px]:w-16 min-[380px]:h-16 relative flex items-center justify-center bg-stone-900 border-stone-800 pointer-events-none cursor-default select-none"
+                        className="w-full h-full relative flex items-center justify-center bg-stone-900 border-stone-800 pointer-events-none cursor-default select-none"
                         aria-hidden="true"
                       />
                     );
@@ -577,7 +577,7 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
                       key={`${r}-${c}`}
                       type="button"
                       onClick={() => handleCellClick(r, c)}
-                      className={`w-14 h-14 min-[380px]:w-16 min-[380px]:h-16 relative flex items-center justify-center font-bold uppercase transition-colors focus:outline-none ${cellBg}`}
+                      className={`w-full h-full relative flex items-center justify-center font-bold uppercase transition-colors focus:outline-none ${cellBg}`}
                     >
                       {clueNum && (
                         <span className="absolute top-0.5 left-1 text-[10px] text-gray-500 font-mono leading-none select-none">
