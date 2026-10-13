@@ -169,24 +169,25 @@ export class MiniCrosswordGenerator implements PuzzleGenerator<MiniCrosswordOpti
         const validWords = new Set([...candidateRows, ...SEED_DICTIONARY.keys()]);
         const clueMap = new Map([...SEED_DICTIONARY.entries(), ...fetchedWords.entries()]);
 
-        // Attempt template search with first template
-        const template = CROSSWORD_TEMPLATES[0];
-        const solved = solveTemplateGrid(template, candidateRows, validWords);
-        if (solved) {
-          for (const clue of [...solved.acrossClues, ...solved.downClues]) {
-            if (clueMap.has(clue.word)) {
-              clue.clue = clueMap.get(clue.word)!;
+        // Attempt template search across first few templates
+        for (const template of CROSSWORD_TEMPLATES.slice(0, 3)) {
+          const solved = solveTemplateGrid(template, candidateRows, validWords);
+          if (solved) {
+            for (const clue of [...solved.acrossClues, ...solved.downClues]) {
+              if (clueMap.has(clue.word)) {
+                clue.clue = clueMap.get(clue.word)!;
+              }
             }
-          }
 
-          return {
-            title: `Mini Crossword - ${formatTitle(theme)}`,
-            date: dateStr,
-            templateId: template.id,
-            grid: solved.grid,
-            acrossClues: solved.acrossClues,
-            downClues: solved.downClues,
-          };
+            return {
+              title: `Mini Crossword - ${formatTitle(theme)}`,
+              date: dateStr,
+              templateId: template.id,
+              grid: solved.grid,
+              acrossClues: solved.acrossClues,
+              downClues: solved.downClues,
+            };
+          }
         }
       }
 

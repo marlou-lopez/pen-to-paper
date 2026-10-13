@@ -218,38 +218,46 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
     const [r, c] = selectedCell;
     if (currentPuzzle.grid[r]?.[c] === '#') return;
 
-    setUserGrid((prev) => {
-      const currentVal = prev[r]?.[c] || '';
-      const next = prev.map((row) => [...row]);
-
-      if (currentVal !== '') {
+    const currentVal = userGrid[r]?.[c] || '';
+    if (currentVal !== '') {
+      setUserGrid((prev) => {
+        const next = prev.map((row) => [...row]);
         next[r][c] = '';
         return next;
-      }
+      });
+      return;
+    }
 
-      // If current cell was already empty, move backward in current word and clear previous cell
-      if (direction === 'across') {
-        let prevCol = c - 1;
-        while (prevCol >= activeClue.startCol && currentPuzzle.grid[r]?.[prevCol] === '#') {
-          prevCol--;
-        }
-        if (prevCol >= activeClue.startCol && currentPuzzle.grid[r]?.[prevCol] !== '#') {
-          next[r][prevCol] = '';
-          setSelectedCell([r, prevCol]);
-        }
-      } else {
-        let prevRow = r - 1;
-        while (prevRow >= activeClue.startRow && currentPuzzle.grid[prevRow]?.[c] === '#') {
-          prevRow--;
-        }
-        if (prevRow >= activeClue.startRow && currentPuzzle.grid[prevRow]?.[c] !== '#') {
-          next[prevRow][c] = '';
-          setSelectedCell([prevRow, c]);
-        }
+    // If current cell was already empty, move backward in current word and clear previous cell
+    let targetCell: [number, number] | null = null;
+    if (direction === 'across') {
+      let prevCol = c - 1;
+      while (prevCol >= activeClue.startCol && currentPuzzle.grid[r]?.[prevCol] === '#') {
+        prevCol--;
       }
-      return next;
-    });
-  }, [selectedCell, direction, activeClue, currentPuzzle]);
+      if (prevCol >= activeClue.startCol && currentPuzzle.grid[r]?.[prevCol] !== '#') {
+        targetCell = [r, prevCol];
+      }
+    } else {
+      let prevRow = r - 1;
+      while (prevRow >= activeClue.startRow && currentPuzzle.grid[prevRow]?.[c] === '#') {
+        prevRow--;
+      }
+      if (prevRow >= activeClue.startRow && currentPuzzle.grid[prevRow]?.[c] !== '#') {
+        targetCell = [prevRow, c];
+      }
+    }
+
+    if (targetCell) {
+      const [tr, tc] = targetCell;
+      setSelectedCell(targetCell);
+      setUserGrid((prev) => {
+        const next = prev.map((row) => [...row]);
+        next[tr][tc] = '';
+        return next;
+      });
+    }
+  }, [selectedCell, direction, activeClue, currentPuzzle, userGrid]);
 
   // Keyboard navigation & entry
   useEffect(() => {
