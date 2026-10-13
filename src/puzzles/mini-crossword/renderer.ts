@@ -1,6 +1,22 @@
-import { PdfBuilder, PAGE_MARGIN, PAGE_WIDTH } from '../../core/pdf-builder.js';
+import { PdfBuilder, PAGE_WIDTH } from '../../core/pdf-builder.js';
 import { GeneratedPuzzle } from '../../core/types.js';
 import { CrosswordClue, MiniCrosswordData } from './types.js';
+
+export const MINI_CROSSWORD_LAYOUT = {
+  cellSize: 180,
+  boardSize: 180 * 5, // 900
+  startX: Math.floor((PAGE_WIDTH - 900) / 2), // 252
+  startY: 240,
+  cluesY: 1180,
+  acrossX: 140,
+  downX: 744,
+  colWidth: 520,
+  clueNumberFontSize: 28,
+  letterFontSize: 64,
+  clueHeaderFontSize: 24,
+  cluePrefixFontSize: 22,
+  clueFontSize: 20,
+} as const;
 
 function getClueNumbersMap(acrossClues: CrosswordClue[], downClues: CrosswordClue[]): Map<string, number> {
   const map = new Map<string, number>();
@@ -21,10 +37,10 @@ function drawCrosswordGrid(
   clueNumbers: Map<string, number>,
   showLetters = false
 ): void {
-  const cellSize = 100;
-  const boardSize = cellSize * 5;
-  const startX = (PAGE_WIDTH - boardSize) / 2;
-  const startY = PAGE_MARGIN + 150;
+  const cellSize = MINI_CROSSWORD_LAYOUT.cellSize;
+  const boardSize = MINI_CROSSWORD_LAYOUT.boardSize;
+  const startX = MINI_CROSSWORD_LAYOUT.startX;
+  const startY = MINI_CROSSWORD_LAYOUT.startY;
 
   // Outer border: 3pt black stroke
   doc
@@ -55,9 +71,9 @@ function drawCrosswordGrid(
       if (clueNumber !== undefined) {
         doc
           .font('Helvetica')
-          .fontSize(14)
+          .fontSize(MINI_CROSSWORD_LAYOUT.clueNumberFontSize)
           .fillColor('#222222')
-          .text(clueNumber.toString(), cellX + 4, cellY + 4, { lineBreak: false });
+          .text(clueNumber.toString(), cellX + 8, cellY + 8, { lineBreak: false });
       }
 
       // Solved bold capital letter centered in cell
@@ -65,9 +81,9 @@ function drawCrosswordGrid(
         const char = grid[r][c]?.toUpperCase() ?? '';
         doc
           .font('Helvetica-Bold')
-          .fontSize(46)
+          .fontSize(MINI_CROSSWORD_LAYOUT.letterFontSize)
           .fillColor('#000000')
-          .text(char, cellX, cellY + 24, { width: cellSize, align: 'center', lineBreak: false });
+          .text(char, cellX, cellY + 45, { width: cellSize, align: 'center', lineBreak: false });
       }
     }
   }
@@ -86,20 +102,20 @@ function renderClueList(
   for (const clue of clues) {
     const numPrefix = `${clue.number}. `;
 
-    doc.font('Helvetica-Bold').fontSize(20);
+    doc.font('Helvetica-Bold').fontSize(MINI_CROSSWORD_LAYOUT.cluePrefixFontSize);
     const numWidth = doc.widthOfString(numPrefix);
     const textWidth = colWidth - numWidth;
 
     doc
       .font('Helvetica-Bold')
-      .fontSize(20)
+      .fontSize(MINI_CROSSWORD_LAYOUT.cluePrefixFontSize)
       .fillColor('#000000')
       .text(numPrefix, startX, currentY, { lineBreak: false });
 
     if (showSolution) {
       doc
         .font('Helvetica')
-        .fontSize(20)
+        .fontSize(MINI_CROSSWORD_LAYOUT.clueFontSize)
         .fillColor('#222222')
         .text(`${clue.clue} — `, startX + numWidth, currentY, {
           width: textWidth,
@@ -109,7 +125,7 @@ function renderClueList(
 
       doc
         .font('Helvetica-Bold')
-        .fontSize(20)
+        .fontSize(MINI_CROSSWORD_LAYOUT.clueFontSize)
         .fillColor('#000000')
         .text(clue.word.toUpperCase(), {
           width: textWidth,
@@ -119,7 +135,7 @@ function renderClueList(
     } else {
       doc
         .font('Helvetica')
-        .fontSize(20)
+        .fontSize(MINI_CROSSWORD_LAYOUT.clueFontSize)
         .fillColor('#222222')
         .text(clue.clue, startX + numWidth, currentY, {
           width: textWidth,
@@ -144,14 +160,10 @@ export function renderMiniCrosswordPdf(
   const builder = new PdfBuilder('Mini Crossword', subtitle, dateStr);
   const doc = builder.getDoc();
 
-  const boardSize = 500;
-  const startY = PAGE_MARGIN + 150;
-  const cluesY = startY + boardSize + 60;
-  const colWidth = 550;
-  const colGap = 60;
-  const totalCluesWidth = colWidth * 2 + colGap;
-  const col1X = (PAGE_WIDTH - totalCluesWidth) / 2;
-  const col2X = col1X + colWidth + colGap;
+  const cluesY = MINI_CROSSWORD_LAYOUT.cluesY;
+  const colWidth = MINI_CROSSWORD_LAYOUT.colWidth;
+  const col1X = MINI_CROSSWORD_LAYOUT.acrossX;
+  const col2X = MINI_CROSSWORD_LAYOUT.downX;
 
   const clueNumbers = getClueNumbersMap(data.acrossClues, data.downClues);
 
@@ -163,13 +175,13 @@ export function renderMiniCrosswordPdf(
   // Clue section headers
   doc
     .font('Helvetica-Bold')
-    .fontSize(24)
+    .fontSize(MINI_CROSSWORD_LAYOUT.clueHeaderFontSize)
     .fillColor('#000000')
     .text('ACROSS', col1X, cluesY);
 
   doc
     .font('Helvetica-Bold')
-    .fontSize(24)
+    .fontSize(MINI_CROSSWORD_LAYOUT.clueHeaderFontSize)
     .fillColor('#000000')
     .text('DOWN', col2X, cluesY);
 
@@ -209,13 +221,13 @@ export function renderMiniCrosswordPdf(
   // Solution clue headers
   keyDoc
     .font('Helvetica-Bold')
-    .fontSize(24)
+    .fontSize(MINI_CROSSWORD_LAYOUT.clueHeaderFontSize)
     .fillColor('#000000')
     .text('ACROSS', col1X, cluesY);
 
   keyDoc
     .font('Helvetica-Bold')
-    .fontSize(24)
+    .fontSize(MINI_CROSSWORD_LAYOUT.clueHeaderFontSize)
     .fillColor('#000000')
     .text('DOWN', col2X, cluesY);
 
