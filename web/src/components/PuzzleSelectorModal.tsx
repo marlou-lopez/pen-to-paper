@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { X, Grid3X3, Search, Zap, Check, Edit3, Calculator } from 'lucide-react';
+import { X, Grid3X3, Search, Zap, Check, Edit3, Calculator, Hash } from 'lucide-react';
 
-export type ActiveTab = 'sudoku' | 'word-search' | 'daily' | 'mini-crossword' | 'kenken';
+export type ActiveTab = 'sudoku' | 'word-search' | 'daily' | 'mini-crossword' | 'kenken' | 'kakuro';
 
 interface PuzzleOption {
   id: ActiveTab;
@@ -21,9 +21,15 @@ const PUZZLE_OPTIONS: PuzzleOption[] = [
   {
     id: 'kenken',
     title: 'KenKen Studio',
-    badge: 'New',
     description: '3×3 to 9×9 Mathdoku puzzles with cage validation',
     icon: Calculator,
+  },
+  {
+    id: 'kakuro',
+    title: 'Kakuro Studio',
+    badge: 'New',
+    description: 'Cross sums puzzles with diagonal clue inspector',
+    icon: Hash,
   },
   {
     id: 'word-search',

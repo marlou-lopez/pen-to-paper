@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { SudokuStudio } from './components/SudokuStudio.tsx';
 import { KenKenStudio } from './components/KenKenStudio.tsx';
+import { KakuroStudio } from './components/KakuroStudio.tsx';
 import { WordSearchStudio } from './components/WordSearchStudio.tsx';
 import { MiniCrosswordStudio } from './components/MiniCrosswordStudio.tsx';
 import { DailyBundle } from './components/DailyBundle.tsx';
@@ -17,6 +18,7 @@ import { getStoredSettings } from './services/githubApi.ts';
 const TAB_TITLES: Record<ActiveTab, string> = {
   sudoku: '🧩 Sudoku Studio',
   kenken: '🧮 KenKen Studio',
+  kakuro: '🔢 Kakuro Studio',
   'word-search': '🔍 Word Search',
   'mini-crossword': '✏️ Mini Crossword Studio',
   daily: '⚡ Daily Pack',
@@ -98,6 +100,9 @@ export const App: React.FC = () => {
         )}
         {activeTab === 'kenken' && (
           <KenKenStudio onOpenSettings={() => setIsSettingsOpen(true)} />
+        )}
+        {activeTab === 'kakuro' && (
+          <KakuroStudio onOpenSettings={() => setIsSettingsOpen(true)} />
         )}
         {activeTab === 'word-search' && (
           <WordSearchStudio onOpenSettings={() => setIsSettingsOpen(true)} />
