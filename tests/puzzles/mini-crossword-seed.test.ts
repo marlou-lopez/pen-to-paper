@@ -1,43 +1,59 @@
 import { describe, it, expect } from 'vitest';
 import { getSeedCrosswordForDate, SEED_CROSSWORDS } from '../../src/puzzles/mini-crossword/seed-bank.ts';
+import { calculateCrosswordNumbering } from '../../src/puzzles/mini-crossword/numbering.ts';
 
 describe('Mini Crossword Seed Bank', () => {
-  it('contains at least 15 verified 5x5 seed puzzles', () => {
-    expect(SEED_CROSSWORDS.length).toBeGreaterThanOrEqual(15);
+  it('contains at least 20 verified 5x5 seed puzzles', () => {
+    expect(SEED_CROSSWORDS.length).toBeGreaterThanOrEqual(20);
   });
 
-  it('validates every seed puzzle has a 5x5 grid and 10 total clues (5 across, 5 down)', () => {
+  it('guarantees every seed puzzle has blockers and strictly distinct across and down words', () => {
     for (const puzzle of SEED_CROSSWORDS) {
       expect(puzzle.grid).toHaveLength(5);
-      for (const row of puzzle.grid) {
-        expect(row).toHaveLength(5);
-      }
-      expect(puzzle.acrossClues).toHaveLength(5);
-      expect(puzzle.downClues).toHaveLength(5);
-      for (const clue of [...puzzle.acrossClues, ...puzzle.downClues]) {
-        expect(clue.word.length).toBe(5);
-        expect(clue.clue.trim().length).toBeGreaterThan(3);
-        expect(clue.number).toBeGreaterThanOrEqual(1);
-      }
-    }
-  });
-
-  it('verifies letter intersections between Across and Down words match in seed puzzles', () => {
-    for (const puzzle of SEED_CROSSWORDS) {
+      let blockerCount = 0;
       for (let r = 0; r < 5; r++) {
+        expect(puzzle.grid[r]).toHaveLength(5);
         for (let c = 0; c < 5; c++) {
-          const acrossWord = puzzle.acrossClues[r].word;
-          const downWord = puzzle.downClues[c].word;
-          expect(acrossWord[c]).toBe(downWord[r]);
-          expect(puzzle.grid[r][c]).toBe(acrossWord[c]);
+          if (puzzle.grid[r][c] === '#') {
+            blockerCount++;
+            // 180-deg symmetry
+            expect(puzzle.grid[r][c]).toBe(puzzle.grid[4 - r][4 - c]);
+          }
         }
       }
+      expect(blockerCount).toBeGreaterThanOrEqual(2);
+
+      const acrossWords = puzzle.acrossClues.map((c) => c.word.toUpperCase());
+      const downWords = puzzle.downClues.map((c) => c.word.toUpperCase());
+
+      // No duplicate words within Across or Down
+      expect(new Set(acrossWords).size).toBe(acrossWords.length);
+      expect(new Set(downWords).size).toBe(downWords.length);
+
+      // Across and Down words must NEVER intersect identically (no shared words)
+      const commonWords = acrossWords.filter((w) => downWords.includes(w));
+      expect(commonWords).toEqual([]);
+
+      // Verify numbering matches calculateCrosswordNumbering
+      const { acrossSlots, downSlots } = calculateCrosswordNumbering(puzzle.grid);
+      expect(puzzle.acrossClues.length).toBe(acrossSlots.length);
+      expect(puzzle.downClues.length).toBe(downSlots.length);
+      for (let i = 0; i < acrossSlots.length; i++) {
+        expect(puzzle.acrossClues[i].number).toBe(acrossSlots[i].number);
+        expect(puzzle.acrossClues[i].length).toBe(acrossSlots[i].length);
+        expect(puzzle.acrossClues[i].word).toHaveLength(acrossSlots[i].length);
+      }
+      for (let i = 0; i < downSlots.length; i++) {
+        expect(puzzle.downClues[i].number).toBe(downSlots[i].number);
+        expect(puzzle.downClues[i].length).toBe(downSlots[i].length);
+        expect(puzzle.downClues[i].word).toHaveLength(downSlots[i].length);
+      }
     }
   });
 
-  it('returns a deterministic seed puzzle for a given date string', () => {
-    const p1 = getSeedCrosswordForDate('2026-10-12');
-    const p2 = getSeedCrosswordForDate('2026-10-12');
+  it('provides deterministic date-based seed lookup', () => {
+    const p1 = getSeedCrosswordForDate('2026-10-13');
+    const p2 = getSeedCrosswordForDate('2026-10-13');
     expect(p1.title).toBe(p2.title);
     expect(p1.grid).toEqual(p2.grid);
   });

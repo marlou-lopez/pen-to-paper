@@ -3,10 +3,8 @@ import { CrosswordClue, MiniCrosswordData, MiniCrosswordOptions } from './types.
 import { getSeedCrosswordForDate, SEED_CROSSWORDS } from './seed-bank.js';
 import { fetchWordsWithDefinitions } from './clue-fetcher.js';
 import { renderMiniCrosswordPdf } from './renderer.js';
-
-
-const ACROSS_NUMBERS = [1, 6, 7, 8, 9];
-const DOWN_NUMBERS = [1, 2, 3, 4, 5];
+import { calculateCrosswordNumbering } from './numbering.js';
+import { CROSSWORD_TEMPLATES, CrosswordTemplate } from './templates.js';
 
 // Pre-populate dictionary of verified words and clues from curated seeds
 const SEED_DICTIONARY = new Map<string, string>();
@@ -26,60 +24,91 @@ function formatTitle(theme: string): string {
 }
 
 /**
- * Solves a 5x5 intersecting word grid using backtracking search.
- * Returns 5 across words if successful, or null if no valid grid is found within step limits.
+ * Solves a 5x5 blocked crossword grid matching a template using backtracking search.
+ * Returns solved grid letters and clues if successful within maxSteps, or null if unsolveable.
  */
-function solve5x5Grid(
-  candidateRows: string[],
+function solveTemplateGrid(
+  template: CrosswordTemplate,
+  candidateWords: string[],
   validWords: Set<string>,
-  maxSteps = 3000
-): string[] | null {
-  const prefixSet = new Set<string>();
+  maxSteps = 2000
+): { grid: string[][]; acrossClues: CrosswordClue[]; downClues: CrosswordClue[] } | null {
+  const { acrossSlots, downSlots } = calculateCrosswordNumbering(template.grid);
+
+  const candByLen = new Map<number, string[]>();
+  for (const len of [3, 4, 5]) {
+    const list = candidateWords.filter(w => w.length === len);
+    const seedList = Array.from(SEED_DICTIONARY.keys()).filter(w => w.length === len);
+    const combined = Array.from(new Set([...list, ...seedList]));
+    candByLen.set(len, combined);
+  }
+
+  const downPrefixes = new Set<string>();
   for (const w of validWords) {
-    for (let len = 1; len <= 5; len++) {
-      prefixSet.add(w.slice(0, len));
+    for (let len = 1; len <= w.length; len++) {
+      downPrefixes.add(`${w.length}:${w.slice(0, len)}`);
     }
   }
 
-  const solution: string[] = [];
+  const grid = template.grid.map(row => [...row]);
   const used = new Set<string>();
   let steps = 0;
 
-  function backtrack(row: number): boolean {
-    if (row === 5) {
-      // Confirm all vertical columns are valid 5-letter words
-      for (let c = 0; c < 5; c++) {
-        const colWord = solution.map(r => r[c]).join('');
-        if (!validWords.has(colWord)) return false;
+  function backtrack(slotIdx: number): boolean {
+    if (slotIdx === acrossSlots.length) {
+      const downWords: string[] = [];
+      for (const ds of downSlots) {
+        const w = ds.coords.map(([r, c]) => grid[r][c]).join('');
+        if (!validWords.has(w)) return false;
+        downWords.push(w);
+      }
+      if (new Set(downWords).size !== downWords.length) return false;
+      for (const dw of downWords) {
+        if (used.has(dw)) return false;
       }
       return true;
     }
 
-    for (const word of candidateRows) {
+    const slot = acrossSlots[slotIdx];
+    const candidates = candByLen.get(slot.length) || [];
+
+    for (const word of candidates) {
       if (used.has(word)) continue;
       steps++;
       if (steps > maxSteps) return false;
 
-      // Validate prefix compatibility for each column
       let valid = true;
-      for (let c = 0; c < 5; c++) {
+      for (let i = 0; i < slot.length; i++) {
+        const [r, c] = slot.coords[i];
+        const ds = downSlots.find(s => s.coords.some(([rr, cc]) => rr === r && cc === c));
+        if (!ds) continue;
+        const idxInDown = ds.coords.findIndex(([rr, cc]) => rr === r && cc === c);
         let prefix = '';
-        for (let r = 0; r < row; r++) {
-          prefix += solution[r][c];
+        for (let p = 0; p < idxInDown; p++) {
+          const [pr, pc] = ds.coords[p];
+          prefix += grid[pr][pc];
         }
-        prefix += word[c];
-        if (!prefixSet.has(prefix)) {
+        prefix += word[i];
+        if (!downPrefixes.has(`${ds.length}:${prefix}`)) {
           valid = false;
           break;
         }
       }
 
       if (valid) {
-        solution.push(word);
+        for (let i = 0; i < slot.length; i++) {
+          const [r, c] = slot.coords[i];
+          grid[r][c] = word[i];
+        }
         used.add(word);
-        if (backtrack(row + 1)) return true;
-        solution.pop();
+
+        if (backtrack(slotIdx + 1)) return true;
+
         used.delete(word);
+        for (let i = 0; i < slot.length; i++) {
+          const [r, c] = slot.coords[i];
+          grid[r][c] = template.grid[r][c];
+        }
       }
     }
 
@@ -87,8 +116,29 @@ function solve5x5Grid(
   }
 
   if (backtrack(0)) {
-    return solution;
+    const acrossClues: CrosswordClue[] = acrossSlots.map(slot => ({
+      number: slot.number,
+      direction: 'across',
+      word: slot.coords.map(([r, c]) => grid[r][c]).join(''),
+      clue: 'Thematic entry',
+      startRow: slot.startRow,
+      startCol: slot.startCol,
+      length: slot.length,
+    }));
+
+    const downClues: CrosswordClue[] = downSlots.map(slot => ({
+      number: slot.number,
+      direction: 'down',
+      word: slot.coords.map(([r, c]) => grid[r][c]).join(''),
+      clue: 'Thematic entry',
+      startRow: slot.startRow,
+      startCol: slot.startCol,
+      length: slot.length,
+    }));
+
+    return { grid, acrossClues, downClues };
   }
+
   return null;
 }
 
@@ -103,7 +153,7 @@ export class MiniCrosswordGenerator implements PuzzleGenerator<MiniCrosswordOpti
 
   /**
    * Generates 5x5 Mini Crossword data.
-   * Attempts dynamic thematic clue generation with backtracking intersection search,
+   * Attempts dynamic thematic clue generation with backtracking template search,
    * falling back cleanly to curated seed puzzles when offline or word pool is insufficient.
    */
   async generateData(options?: MiniCrosswordOptions): Promise<MiniCrosswordData> {
@@ -119,37 +169,23 @@ export class MiniCrosswordGenerator implements PuzzleGenerator<MiniCrosswordOpti
         const validWords = new Set([...candidateRows, ...SEED_DICTIONARY.keys()]);
         const clueMap = new Map([...SEED_DICTIONARY.entries(), ...fetchedWords.entries()]);
 
-        const solvedRows = solve5x5Grid(candidateRows, validWords);
-        if (solvedRows) {
-          const solvedCols = [0, 1, 2, 3, 4].map(c => solvedRows.map(r => r[c]).join(''));
-          const grid = solvedRows.map(row => row.split(''));
-
-          const acrossClues: CrosswordClue[] = solvedRows.map((word, index) => ({
-            number: ACROSS_NUMBERS[index],
-            direction: 'across',
-            word,
-            clue: clueMap.get(word) || 'Thematic entry',
-            startRow: index,
-            startCol: 0,
-            length: 5,
-          }));
-
-          const downClues: CrosswordClue[] = solvedCols.map((word, index) => ({
-            number: DOWN_NUMBERS[index],
-            direction: 'down',
-            word,
-            clue: clueMap.get(word) || 'Thematic entry',
-            startRow: 0,
-            startCol: index,
-            length: 5,
-          }));
+        // Attempt template search with first template
+        const template = CROSSWORD_TEMPLATES[0];
+        const solved = solveTemplateGrid(template, candidateRows, validWords);
+        if (solved) {
+          for (const clue of [...solved.acrossClues, ...solved.downClues]) {
+            if (clueMap.has(clue.word)) {
+              clue.clue = clueMap.get(clue.word)!;
+            }
+          }
 
           return {
             title: `Mini Crossword - ${formatTitle(theme)}`,
             date: dateStr,
-            grid,
-            acrossClues,
-            downClues,
+            templateId: template.id,
+            grid: solved.grid,
+            acrossClues: solved.acrossClues,
+            downClues: solved.downClues,
           };
         }
       }

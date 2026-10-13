@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { cleanDefinition, fetchWordsWithDefinitions } from '../../src/puzzles/mini-crossword/clue-fetcher.ts';
 import { MiniCrosswordGenerator } from '../../src/puzzles/mini-crossword/generator.ts';
+import { calculateCrosswordNumbering } from '../../src/puzzles/mini-crossword/numbering.ts';
 
 describe('Mini Crossword Clue Fetcher', () => {
   it('cleans raw Datamuse definitions correctly', () => {
@@ -19,8 +20,8 @@ describe('Mini Crossword Clue Fetcher', () => {
     const generator = new MiniCrosswordGenerator();
     const result = await generator.generateData({ theme: 'nonexistent-xyz-theme', date: '2026-10-12' });
     expect(result.grid).toHaveLength(5);
-    expect(result.acrossClues).toHaveLength(5);
-    expect(result.downClues).toHaveLength(5);
+    expect(result.acrossClues.length).toBeGreaterThanOrEqual(4);
+    expect(result.downClues.length).toBeGreaterThanOrEqual(4);
   });
 
   describe('fetchWordsWithDefinitions network behavior', () => {
@@ -58,23 +59,44 @@ describe('Mini Crossword Clue Fetcher', () => {
 });
 
 describe('MiniCrosswordGenerator Data Generation', () => {
-  it('generates a valid 5x5 grid with 5 across and 5 down clues matching character intersections', async () => {
+  it('generates a valid 5x5 grid with blockers and clues matching character intersections', async () => {
     const generator = new MiniCrosswordGenerator();
     const puzzle = await generator.generateData({ date: '2026-10-12' });
 
-    for (let r = 0; r < 5; r++) {
-      for (let c = 0; c < 5; c++) {
-        expect(puzzle.grid[r][c]).toBe(puzzle.acrossClues[r].word[c]);
-        expect(puzzle.grid[r][c]).toBe(puzzle.downClues[c].word[r]);
+    expect(puzzle.grid).toHaveLength(5);
+    const { acrossSlots, downSlots } = calculateCrosswordNumbering(puzzle.grid);
+    expect(puzzle.acrossClues.length).toBe(acrossSlots.length);
+    expect(puzzle.downClues.length).toBe(downSlots.length);
+
+    for (const clue of puzzle.acrossClues) {
+      const slot = acrossSlots.find((s) => s.number === clue.number);
+      expect(slot).toBeDefined();
+      expect(clue.length).toBe(slot!.length);
+      expect(clue.word.length).toBe(slot!.length);
+      for (let i = 0; i < slot!.length; i++) {
+        const [r, c] = slot!.coords[i];
+        expect(puzzle.grid[r][c]).toBe(clue.word[i]);
+      }
+    }
+
+    for (const clue of puzzle.downClues) {
+      const slot = downSlots.find((s) => s.number === clue.number);
+      expect(slot).toBeDefined();
+      expect(clue.length).toBe(slot!.length);
+      expect(clue.word.length).toBe(slot!.length);
+      for (let i = 0; i < slot!.length; i++) {
+        const [r, c] = slot!.coords[i];
+        expect(puzzle.grid[r][c]).toBe(clue.word[i]);
       }
     }
   });
 
-  it('assigns standard crossword clue numbers (1, 6, 7, 8, 9 across and 1, 2, 3, 4, 5 down)', async () => {
+  it('assigns standard crossword clue numbers matching calculateCrosswordNumbering', async () => {
     const generator = new MiniCrosswordGenerator();
     const puzzle = await generator.generateData({ date: '2026-10-12' });
-    expect(puzzle.acrossClues.map(c => c.number)).toEqual([1, 6, 7, 8, 9]);
-    expect(puzzle.downClues.map(c => c.number)).toEqual([1, 2, 3, 4, 5]);
+    const { acrossSlots, downSlots } = calculateCrosswordNumbering(puzzle.grid);
+    expect(puzzle.acrossClues.map((c) => c.number)).toEqual(acrossSlots.map((s) => s.number));
+    expect(puzzle.downClues.map((c) => c.number)).toEqual(downSlots.map((s) => s.number));
   });
 
   it('implements PuzzleGenerator metadata, generate, and renderPdf', async () => {
@@ -92,7 +114,7 @@ describe('MiniCrosswordGenerator Data Generation', () => {
     expect(pdfBuffer.subarray(0, 4).toString()).toBe('%PDF');
   });
 
-  it('executes dynamic solving branch when sufficient theme words are returned', async () => {
+  it('executes dynamic solving branch or falls back when theme words are returned', async () => {
     const originalFetch = globalThis.fetch;
     try {
       globalThis.fetch = vi.fn().mockResolvedValue({
@@ -115,8 +137,8 @@ describe('MiniCrosswordGenerator Data Generation', () => {
       const puzzle = await generator.generateData({ theme: 'Nature', date: '2026-10-12' });
       expect(puzzle.title).toBe('Mini Crossword - Nature');
       expect(puzzle.grid).toHaveLength(5);
-      expect(puzzle.acrossClues).toHaveLength(5);
-      expect(puzzle.downClues).toHaveLength(5);
+      expect(puzzle.acrossClues.length).toBeGreaterThanOrEqual(4);
+      expect(puzzle.downClues.length).toBeGreaterThanOrEqual(4);
     } finally {
       globalThis.fetch = originalFetch;
     }
