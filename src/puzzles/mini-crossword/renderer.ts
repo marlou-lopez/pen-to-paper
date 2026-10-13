@@ -38,6 +38,11 @@ function drawCrosswordGrid(
       const cellX = startX + c * cellSize;
       const cellY = startY + r * cellSize;
 
+      if (grid[r][c] === '#') {
+        doc.rect(cellX, cellY, cellSize, cellSize).fillColor('#000000').fill();
+        continue;
+      }
+
       // Cell square: 1pt line stroke (#555555)
       doc
         .rect(cellX, cellY, cellSize, cellSize)
@@ -51,7 +56,7 @@ function drawCrosswordGrid(
         doc
           .font('Helvetica')
           .fontSize(14)
-          .fillColor(showLetters ? '#666666' : '#222222')
+          .fillColor('#222222')
           .text(clueNumber.toString(), cellX + 4, cellY + 4, { lineBreak: false });
       }
 
