@@ -4,3 +4,4 @@ export * from './solver.js';
 export * from './templates.js';
 export * from './seed-bank.js';
 export * from './generator.js';
+export * from './renderer.js';

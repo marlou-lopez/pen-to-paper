@@ -3,6 +3,7 @@ import { getSeedKakuro } from './seed-bank.js';
 import { solveKakuro } from './solver.js';
 import { extractKakuroRuns, KAKURO_TEMPLATES } from './templates.js';
 import { KakuroCell, KakuroData, KakuroDifficulty, KakuroOptions, KakuroRun } from './types.js';
+import { renderKakuroPdf } from './renderer.js';
 
 export interface KakuroGeneratedPuzzle extends GeneratedPuzzle<KakuroData> {
   pdfBuffer?: Buffer;
@@ -122,7 +123,7 @@ export class KakuroGenerator implements PuzzleGenerator<KakuroOptions, KakuroDat
             runs: testRuns,
           };
           const filename = `Kakuro_${size}x${size}_${difficulty}_${dateStr}.pdf`;
-          return {
+          const puzzle: KakuroGeneratedPuzzle = {
             metadata: {
               ...this.metadata,
               date: dateStr,
@@ -132,6 +133,8 @@ export class KakuroGenerator implements PuzzleGenerator<KakuroOptions, KakuroDat
             filename,
             puzzleData,
           };
+          puzzle.pdfBuffer = await this.renderPdf(puzzle);
+          return puzzle;
         }
       }
     }
@@ -139,7 +142,7 @@ export class KakuroGenerator implements PuzzleGenerator<KakuroOptions, KakuroDat
     // Fallback to verified seed puzzle
     const seedPuzzle = getSeedKakuro(size, difficulty, dateStr);
     const filename = `Kakuro_${size}x${size}_${difficulty}_${dateStr}.pdf`;
-    return {
+    const puzzle: KakuroGeneratedPuzzle = {
       metadata: {
         ...this.metadata,
         date: dateStr,
@@ -149,10 +152,11 @@ export class KakuroGenerator implements PuzzleGenerator<KakuroOptions, KakuroDat
       filename,
       puzzleData: seedPuzzle,
     };
+    puzzle.pdfBuffer = await this.renderPdf(puzzle);
+    return puzzle;
   }
 
   async renderPdf(puzzle: GeneratedPuzzle<KakuroData>): Promise<Buffer> {
-    // Placeholder: full PDFKit rendering implemented in Task 3
-    return Buffer.alloc(0);
+    return renderKakuroPdf(puzzle);
   }
 }
