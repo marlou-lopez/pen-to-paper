@@ -78,8 +78,8 @@ export function renderKenKenPdf(
     if (!isSolution) {
       activeDoc
         .font('Helvetica')
-        .fontSize(22)
-        .fillColor('#333333')
+        .fontSize(20)
+        .fillColor('#444444')
         .text(
           `Fill with digits 1-${size} without repeats in rows/cols. Bold cages must compute to target number.`,
           PAGE_MARGIN,

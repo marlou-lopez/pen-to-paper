@@ -5,7 +5,7 @@ import { SudokuData } from './generator.js';
 export const SUDOKU_LAYOUT = {
   cellSize: 110,
   boardSize: 110 * 9,
-  startX: (PAGE_WIDTH - 110 * 9) / 2,
+  startX: Math.floor((PAGE_WIDTH - 110 * 9) / 2),
   startY: 240,
 } as const;
 
