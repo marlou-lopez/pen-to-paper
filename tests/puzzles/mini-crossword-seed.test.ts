@@ -42,11 +42,19 @@ describe('Mini Crossword Seed Bank', () => {
         expect(puzzle.acrossClues[i].number).toBe(acrossSlots[i].number);
         expect(puzzle.acrossClues[i].length).toBe(acrossSlots[i].length);
         expect(puzzle.acrossClues[i].word).toHaveLength(acrossSlots[i].length);
+        expect(puzzle.acrossClues[i].clue.trim().length).toBeGreaterThan(3);
+
+        const reconstructed = acrossSlots[i].coords.map(([r, c]) => puzzle.grid[r][c]).join('');
+        expect(puzzle.acrossClues[i].word).toBe(reconstructed);
       }
       for (let i = 0; i < downSlots.length; i++) {
         expect(puzzle.downClues[i].number).toBe(downSlots[i].number);
         expect(puzzle.downClues[i].length).toBe(downSlots[i].length);
         expect(puzzle.downClues[i].word).toHaveLength(downSlots[i].length);
+        expect(puzzle.downClues[i].clue.trim().length).toBeGreaterThan(3);
+
+        const reconstructed = downSlots[i].coords.map(([r, c]) => puzzle.grid[r][c]).join('');
+        expect(puzzle.downClues[i].word).toBe(reconstructed);
       }
     }
   });

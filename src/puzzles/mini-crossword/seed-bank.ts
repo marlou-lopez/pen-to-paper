@@ -81,11 +81,11 @@ const RAW_SEEDS: RawSeedPuzzle[] = [
       'Tall slender wetland grass or woodwind piece',
     ],
     downClues: [
-      'Luminous celestial body shining in night sky',
       'Plural pronoun indicating objects close at hand',
       'Equine steed harnessed for riding or farming',
       'Equipped with weaponry or prepared for combat',
       'Examination assessing knowledge or skill',
+      'Luminous celestial body shining in night sky',
     ],
   },
   // 4. Coral Reef (tmpl-4-quad-corners)
