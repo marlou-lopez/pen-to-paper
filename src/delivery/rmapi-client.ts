@@ -44,6 +44,7 @@ export class RmapiDeliveryClient implements DeliveryClient {
         '/Puzzles/Archive/Sudoku',
         '/Puzzles/Archive/Mini Crossword',
         '/Puzzles/Archive/KenKen',
+        '/Puzzles/Archive/Kakuro',
       ];
       for (const archivePath of archiveFolders) {
         try {

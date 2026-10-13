@@ -19,6 +19,14 @@ describe('Orchestrator runGenerator', () => {
     expect(result[0].puzzleData.size).toBe(5);
   });
 
+  it('filters by kakuro puzzle type when specified with custom size and difficulty', async () => {
+    const result = await orchestrator.runGenerator({ type: 'kakuro', size: 6, difficulty: 'easy', local: true });
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('kakuro');
+    expect(result[0].puzzleData.size).toBe(6);
+    expect(result[0].puzzleData.difficulty).toBe('easy');
+  });
+
   it('routes kenken to /Puzzles/KenKen by default and /Puzzles/Daily when daily option is true', async () => {
     const defaultRes = await orchestrator.runGenerator({ type: 'kenken', local: true });
     expect(defaultRes[0].destinationFolder).toBe('/Puzzles/KenKen');
@@ -27,17 +35,26 @@ describe('Orchestrator runGenerator', () => {
     expect(dailyRes[0].destinationFolder).toBe('/Puzzles/Daily');
   });
 
-  it('generates word-search, sudoku, mini-crossword, and kenken when type is all', async () => {
+  it('routes kakuro to /Puzzles/Kakuro by default and /Puzzles/Daily when daily option is true', async () => {
+    const defaultRes = await orchestrator.runGenerator({ type: 'kakuro', local: true });
+    expect(defaultRes[0].destinationFolder).toBe('/Puzzles/Kakuro');
+
+    const dailyRes = await orchestrator.runGenerator({ type: 'kakuro', daily: true, local: true });
+    expect(dailyRes[0].destinationFolder).toBe('/Puzzles/Daily');
+  });
+
+  it('generates word-search, sudoku, mini-crossword, kenken, and kakuro when type is all', async () => {
     const result = await orchestrator.runGenerator({ type: 'all', local: true });
-    expect(result).toHaveLength(4);
+    expect(result).toHaveLength(5);
     const types = result.map((r: any) => r.type);
     expect(types).toContain('word-search');
     expect(types).toContain('sudoku');
     expect(types).toContain('mini-crossword');
     expect(types).toContain('kenken');
+    expect(types).toContain('kakuro');
   });
 
-  it('generates word-search, sudoku, mini-crossword, and kenken puzzles in local mode when type is all', async () => {
+  it('generates word-search, sudoku, mini-crossword, kenken, and kakuro puzzles in local mode when type is all', async () => {
     const results = await runGenerator({
       type: 'all',
       difficulty: 'medium',
@@ -46,8 +63,8 @@ describe('Orchestrator runGenerator', () => {
       outputDir: './test-cli-output',
     });
 
-    expect(results).toHaveLength(4);
-    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku', 'mini-crossword', 'kenken']);
+    expect(results).toHaveLength(5);
+    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku', 'mini-crossword', 'kenken', 'kakuro']);
     expect(results[0].deliveredPath).toContain('test-cli-output');
   });
 
@@ -185,5 +202,19 @@ describe('CLI parseArgs', () => {
 
     const custom = parseArgs(['--type=kenken', '--size=4']);
     expect(custom.size).toBe(4);
+  });
+
+  it('parses --type=kakuro and defaults size to 8 and difficulty to medium', () => {
+    const options = parseArgs(['--type=kakuro']);
+    expect(options.type).toBe('kakuro');
+    expect(options.size).toBe(8);
+    expect(options.difficulty).toBe('medium');
+  });
+
+  it('parses --size and --difficulty for kakuro', () => {
+    const options = parseArgs(['--type=kakuro', '--size=10', '--difficulty=hard']);
+    expect(options.type).toBe('kakuro');
+    expect(options.size).toBe(10);
+    expect(options.difficulty).toBe('hard');
   });
 });

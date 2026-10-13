@@ -17,6 +17,7 @@ on:
           - sudoku
           - mini-crossword
           - kenken
+          - kakuro
       sudoku_difficulty:
         description: 'Sudoku difficulty'
         required: true
@@ -48,6 +49,24 @@ on:
           - '9'
       kenken_difficulty:
         description: 'KenKen difficulty'
+        required: false
+        default: 'medium'
+        type: choice
+        options:
+          - easy
+          - medium
+          - hard
+      kakuro_size:
+        description: 'Kakuro grid size (6, 8, 10)'
+        required: false
+        default: '8'
+        type: choice
+        options:
+          - '6'
+          - '8'
+          - '10'
+      kakuro_difficulty:
+        description: 'Kakuro difficulty'
         required: false
         default: 'medium'
         type: choice
@@ -116,6 +135,8 @@ jobs:
           SUDOKU_DIFF: ${{ inputs.sudoku_difficulty || 'random' }}
           KENKEN_SIZE: ${{ inputs.kenken_size || '6' }}
           KENKEN_DIFF: ${{ inputs.kenken_difficulty || 'medium' }}
+          KAKURO_SIZE: ${{ inputs.kakuro_size || '8' }}
+          KAKURO_DIFF: ${{ inputs.kakuro_difficulty || 'medium' }}
           IS_DAILY: ${{ inputs.is_daily }}
         run: |
           THEME_FLAG=""
@@ -133,12 +154,16 @@ jobs:
           DIFF_FLAG=""
           if [ "$PUZZLE_TYPE" = "kenken" ]; then
             DIFF_FLAG="--difficulty=$KENKEN_DIFF"
+          elif [ "$PUZZLE_TYPE" = "kakuro" ]; then
+            DIFF_FLAG="--difficulty=$KAKURO_DIFF"
           else
             DIFF_FLAG="--difficulty=$SUDOKU_DIFF"
           fi
 
           SIZE_FLAG=""
-          if [ -n "$KENKEN_SIZE" ]; then
+          if [ "$PUZZLE_TYPE" = "kakuro" ]; then
+            SIZE_FLAG="--size=$KAKURO_SIZE"
+          elif [ "$PUZZLE_TYPE" = "kenken" ]; then
             SIZE_FLAG="--size=$KENKEN_SIZE"
           fi
 

@@ -3,6 +3,7 @@ import { WordSearchGenerator } from '../puzzles/word-search/index.js';
 import { SudokuGenerator } from '../puzzles/sudoku/index.js';
 import { MiniCrosswordGenerator } from '../puzzles/mini-crossword/index.js';
 import { KenKenGenerator } from '../puzzles/kenken/index.js';
+import { KakuroGenerator } from '../puzzles/kakuro/index.js';
 
 export class PuzzleRegistry {
   private generators = new Map<string, PuzzleGenerator<any, any>>();
@@ -26,6 +27,7 @@ export function createDefaultRegistry(): PuzzleRegistry {
   registry.register(new SudokuGenerator());
   registry.register(new MiniCrosswordGenerator());
   registry.register(new KenKenGenerator());
+  registry.register(new KakuroGenerator());
   return registry;
 }
 
