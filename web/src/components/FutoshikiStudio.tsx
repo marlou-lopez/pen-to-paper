@@ -182,11 +182,26 @@ export const FutoshikiStudio: React.FC<FutoshikiStudioProps> = ({ onOpenSettings
       });
 
       if (digit > 0) {
-        // Auto-advance to next cell in reading order
-        if (c < size - 1) {
-          setSelectedCell([r, c + 1]);
-        } else if (r < size - 1) {
-          setSelectedCell([r + 1, 0]);
+        // Auto-advance to next editable cell in reading order (skipping locked given clues)
+        let nextR = r;
+        let nextC = c;
+        let found = false;
+        while (true) {
+          if (nextC < size - 1) {
+            nextC++;
+          } else if (nextR < size - 1) {
+            nextR++;
+            nextC = 0;
+          } else {
+            break;
+          }
+          if (activePuzzle.initialGrid[nextR]?.[nextC] === 0) {
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          setSelectedCell([nextR, nextC]);
         }
       }
     },

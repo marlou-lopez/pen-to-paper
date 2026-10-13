@@ -2,6 +2,16 @@ import { GeneratedPuzzle, PuzzleGenerator, PuzzleMetadata } from '../../core/typ
 import { FutoshikiData, FutoshikiDifficulty, FutoshikiInequality, FutoshikiOptions } from './types.js';
 import { solveFutoshiki } from './solver.js';
 import { getSeedFutoshiki } from './seed-bank.js';
+import { renderFutoshikiPdf } from './renderer.js';
+
+function shuffle<T>(arr: T[]): T[] {
+  const res = [...arr];
+  for (let i = res.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [res[i], res[j]] = [res[j], res[i]];
+  }
+  return res;
+}
 
 export interface FutoshikiGeneratedPuzzle extends GeneratedPuzzle<FutoshikiData> {
   pdfBuffer?: Buffer;
@@ -53,13 +63,7 @@ export class FutoshikiGenerator implements PuzzleGenerator<FutoshikiOptions, Fut
   }
 
   async renderPdf(puzzle: GeneratedPuzzle<FutoshikiData> | FutoshikiData): Promise<Buffer> {
-    try {
-      // @ts-ignore
-      const { renderFutoshikiPdf } = await import('./renderer.js');
-      return renderFutoshikiPdf(puzzle);
-    } catch {
-      return Buffer.from('');
-    }
+    return renderFutoshikiPdf(puzzle);
   }
 
   private generateProcedural(
@@ -98,7 +102,7 @@ export class FutoshikiGenerator implements PuzzleGenerator<FutoshikiOptions, Fut
     // Select subset of inequalities based on difficulty
     const ineqKeepRatio = difficulty === 'easy' ? 0.45 : difficulty === 'medium' ? 0.35 : 0.30;
     const ineqCount = Math.floor(allIneqs.length * ineqKeepRatio);
-    const shuffledIneqs = [...allIneqs].sort(() => Math.random() - 0.5).slice(0, ineqCount);
+    const shuffledIneqs = shuffle(allIneqs).slice(0, ineqCount);
 
     // Initial numbers
     const initialGrid = sol.map((row) => [...row]);
@@ -112,10 +116,10 @@ export class FutoshikiGenerator implements PuzzleGenerator<FutoshikiOptions, Fut
         cellIndices.push([r, c]);
       }
     }
-    cellIndices.sort(() => Math.random() - 0.5);
+    const shuffledCellIndices = shuffle(cellIndices);
 
     let filledCount = size * size;
-    for (const [r, c] of cellIndices) {
+    for (const [r, c] of shuffledCellIndices) {
       if (filledCount <= numCellsToKeep) break;
       const backup = initialGrid[r][c];
       initialGrid[r][c] = 0;
@@ -155,15 +159,6 @@ export class FutoshikiGenerator implements PuzzleGenerator<FutoshikiOptions, Fut
         if (grid[r][col] === num) return false;
       }
       return true;
-    }
-
-    function shuffle<T>(arr: T[]): T[] {
-      const res = [...arr];
-      for (let i = res.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [res[i], res[j]] = [res[j], res[i]];
-      }
-      return res;
     }
 
     function solve(row: number, col: number): boolean {
