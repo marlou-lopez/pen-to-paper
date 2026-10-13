@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { renderFutoshikiPdf } from '../../src/puzzles/futoshiki/renderer.js';
+import { describe, it, expect, vi } from 'vitest';
+import { renderFutoshikiPdf, getLayoutConfig, getFutoshikiLayout } from '../../src/puzzles/futoshiki/renderer.js';
 import { getSeedFutoshiki } from '../../src/puzzles/futoshiki/seed-bank.js';
 import { FutoshikiGenerator } from '../../src/puzzles/futoshiki/generator.js';
 import { FutoshikiData } from '../../src/puzzles/futoshiki/types.js';
 import * as futoshikiBarrel from '../../src/puzzles/futoshiki/index.js';
+import { PdfBuilder } from '../../src/core/pdf-builder.js';
 
 function getPdfPageCount(buffer: Buffer): number {
   const pdfText = buffer.toString('latin1');
@@ -22,16 +23,93 @@ describe('Futoshiki PDF Renderer', () => {
     expect(typeof futoshikiBarrel.renderFutoshikiPdf).toBe('function');
   });
 
-  it('renders a 3-page e-ink PDF for 5x5 Futoshiki', async () => {
+  it('standardizes Futoshiki layout geometry to startY = 240 pt, boardWidth = 960 pt (955 pt for 4x4), and rules at Y = 1240 pt', () => {
+    const config4 = getLayoutConfig(4);
+    expect(config4.cellSize).toBe(205);
+    expect(config4.gutter).toBe(45);
+    expect(config4.numFontSize).toBe(70);
+    expect(config4.chevronSpan).toBe(12);
+
+    const config5 = getLayoutConfig(5);
+    expect(config5.cellSize).toBe(160);
+    expect(config5.gutter).toBe(40);
+    expect(config5.numFontSize).toBe(56);
+    expect(config5.chevronSpan).toBe(10);
+
+    const config6 = getLayoutConfig(6);
+    expect(config6.cellSize).toBe(135);
+    expect(config6.gutter).toBe(30);
+    expect(config6.numFontSize).toBe(48);
+    expect(config6.chevronSpan).toBe(8);
+
+    const layout5 = getFutoshikiLayout(5);
+    expect(layout5.startY).toBe(240);
+    expect(layout5.boardWidth).toBe(960);
+    expect(layout5.boardHeight).toBe(960);
+    expect(layout5.startX).toBe(222);
+    expect(layout5.rulesY).toBe(1240);
+
+    const layout6 = getFutoshikiLayout(6);
+    expect(layout6.startY).toBe(240);
+    expect(layout6.boardWidth).toBe(960);
+    expect(layout6.boardHeight).toBe(960);
+    expect(layout6.startX).toBe(222);
+    expect(layout6.rulesY).toBe(1240);
+
+    const layout4 = getFutoshikiLayout(4);
+    expect(layout4.startY).toBe(240);
+    expect(layout4.boardWidth).toBe(955);
+    expect(layout4.boardHeight).toBe(955);
+    expect(layout4.startX).toBe(224);
+    expect(layout4.rulesY).toBe(1240);
+  });
+
+  it('renders a 3-page e-ink PDF for 5x5 Futoshiki with standardized anchor startY = 240 and rules at Y = 1240', async () => {
     const puzzleData = getSeedFutoshiki(5, 'medium', '2026-10-14');
-    const pdfBuffer = await renderFutoshikiPdf(puzzleData);
 
-    expect(Buffer.isBuffer(pdfBuffer)).toBe(true);
-    expect(pdfBuffer.length).toBeGreaterThan(1000);
-    expect(pdfBuffer.subarray(0, 4).toString()).toBe('%PDF');
+    const rects: { x: number; y: number; w: number; h: number }[] = [];
+    const textCalls: { text: string; x: number; y: number }[] = [];
+    const origGetDoc = PdfBuilder.prototype.getDoc;
+    const spy = vi.spyOn(PdfBuilder.prototype, 'getDoc').mockImplementation(function (this: any) {
+      const doc = origGetDoc.call(this);
+      const origRect = doc.rect.bind(doc);
+      doc.rect = (x: number, y: number, w: number, h: number) => {
+        rects.push({ x, y, w, h });
+        return origRect(x, y, w, h);
+      };
+      const origText = doc.text.bind(doc);
+      doc.text = (str: any, x?: any, y?: any, options?: any) => {
+        if (typeof x === 'number' && typeof y === 'number') {
+          textCalls.push({ text: String(str), x, y });
+        }
+        return origText(str, x, y, options);
+      };
+      return doc;
+    });
 
-    const pdfData = await parsePdfBuffer(pdfBuffer);
-    expect(pdfData.Pages.length).toBe(3); // Page 1: Puzzle, Page 2: Spoiler Blocker, Page 3: Answer Key
+    try {
+      const pdfBuffer = await renderFutoshikiPdf(puzzleData);
+
+      expect(Buffer.isBuffer(pdfBuffer)).toBe(true);
+      expect(pdfBuffer.length).toBeGreaterThan(1000);
+      expect(pdfBuffer.subarray(0, 4).toString()).toBe('%PDF');
+
+      const pdfData = await parsePdfBuffer(pdfBuffer);
+      expect(pdfData.Pages.length).toBe(3); // Page 1: Puzzle, Page 2: Spoiler Blocker, Page 3: Answer Key
+
+      // Check first cell starts at startX = 222, startY = 240 with cellSize = 160
+      const cell00 = rects.find((r) => r.w === 160 && r.h === 160);
+      expect(cell00).toBeDefined();
+      expect(cell00?.x).toBe(222);
+      expect(cell00?.y).toBe(240);
+
+      // Rules text at Y = 1240
+      const rulesCall = textCalls.find((call) => call.text.includes('Futoshiki: Fill every row and column'));
+      expect(rulesCall).toBeDefined();
+      expect(rulesCall?.y).toBe(1240);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('renders 4x4 and 6x6 grids cleanly without layout overlap', async () => {

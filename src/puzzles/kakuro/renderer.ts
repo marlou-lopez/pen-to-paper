@@ -2,6 +2,27 @@ import { PdfBuilder, PAGE_MARGIN, PAGE_WIDTH } from '../../core/pdf-builder.js';
 import { GeneratedPuzzle } from '../../core/types.js';
 import { KakuroData } from './types.js';
 
+export function getKakuroLayout(size: number) {
+  const cellSize =
+    size === 6 ? 160 : size === 8 ? 120 : size === 10 ? 96 : Math.floor(960 / size);
+  const boardSize = cellSize * size;
+  const startX = Math.floor((PAGE_WIDTH - boardSize) / 2);
+  const startY = 240;
+  const clueFontSize = size === 6 ? 28 : size === 8 ? 24 : 20;
+  const solutionFontSize = size === 6 ? 56 : size === 8 ? 48 : 40;
+  const rulesY = startY + boardSize + 40;
+
+  return {
+    cellSize,
+    boardSize,
+    startX,
+    startY,
+    clueFontSize,
+    solutionFontSize,
+    rulesY,
+  };
+}
+
 export function renderKakuroPdf(
   puzzle: GeneratedPuzzle<KakuroData> | KakuroData
 ): Promise<Buffer> {
@@ -14,25 +35,24 @@ export function renderKakuroPdf(
   const builder = new PdfBuilder('Kakuro', `${size}x${size} • ${difficulty}`, dateStr);
   const doc = builder.getDoc();
 
-  // Dynamic cell sizing: 6x6 -> 110 pt, 8x8 -> 90 pt, 10x10 -> 75 pt
-  const cellSize =
-    size === 6 ? 110 : size === 8 ? 90 : size === 10 ? 75 : Math.floor((PAGE_WIDTH - PAGE_MARGIN * 2) / size);
-  const boardSize = cellSize * size;
-  const startX = Math.floor((PAGE_WIDTH - boardSize) / 2);
-  const startY = size === 6 ? 380 : size === 8 ? 350 : size === 10 ? 330 : 350;
-
-  const clueFontSize = cellSize >= 100 ? 20 : cellSize >= 85 ? 18 : 16;
-  const solutionFontSize = cellSize >= 100 ? 44 : cellSize >= 85 ? 40 : 36;
+  const {
+    cellSize,
+    boardSize,
+    startX,
+    startY,
+    clueFontSize,
+    solutionFontSize,
+    rulesY,
+  } = getKakuroLayout(size);
 
   function drawGrid(isSolution = false) {
     const activeDoc = isSolution ? builder.getDoc() : doc;
 
     // Rules prompt on Page 1
     if (!isSolution) {
-      const rulesY = startY + boardSize + 70;
       activeDoc
         .font('Helvetica')
-        .fontSize(22)
+        .fontSize(20)
         .fillColor('#444444')
         .text(
           'Kakuro: Fill white cells with digits 1–9. Digits within each run cannot repeat and must sum to the clue.',
