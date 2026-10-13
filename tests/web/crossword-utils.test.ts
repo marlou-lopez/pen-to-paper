@@ -2,60 +2,81 @@ import { describe, it, expect } from 'vitest';
 import {
   createEmptyCrosswordGrid,
   isCrosswordSolved,
-  CELL_CLUE_NUMBERS,
+  calculateCrosswordNumbering,
   SAMPLE_PUZZLES,
 } from '../../web/src/utils/crossword.ts';
 
-describe('Crossword Web Utilities', () => {
-  it('creates an empty 5x5 grid with empty strings (solutions hidden)', () => {
-    const grid = createEmptyCrosswordGrid();
-    expect(grid).toHaveLength(5);
+describe('Web Crossword Utilities', () => {
+  it('creates empty grid preserving black blocker tiles', () => {
+    const sample = SAMPLE_PUZZLES[0];
+    const emptyGrid = createEmptyCrosswordGrid(sample.grid);
     for (let r = 0; r < 5; r++) {
-      expect(grid[r]).toHaveLength(5);
       for (let c = 0; c < 5; c++) {
-        expect(grid[r][c]).toBe('');
+        if (sample.grid[r][c] === '#') {
+          expect(emptyGrid[r][c]).toBe('#');
+        } else {
+          expect(emptyGrid[r][c]).toBe('');
+        }
       }
     }
   });
 
-  it('verifies all 5 sample puzzles have valid 5x5 grids and 5 across + 5 down clues', () => {
-    expect(SAMPLE_PUZZLES.length).toBeGreaterThanOrEqual(5);
-    for (const puzzle of SAMPLE_PUZZLES) {
-      expect(puzzle.grid).toHaveLength(5);
-      expect(puzzle.acrossClues).toHaveLength(5);
-      expect(puzzle.downClues).toHaveLength(5);
-      for (let r = 0; r < 5; r++) {
-        expect(puzzle.grid[r]).toHaveLength(5);
-      }
-    }
-  });
-
-  it('correctly maps clue numbers for standard 5x5 mini crossword positions', () => {
-    expect(CELL_CLUE_NUMBERS['0,0']).toBe(1);
-    expect(CELL_CLUE_NUMBERS['0,1']).toBe(2);
-    expect(CELL_CLUE_NUMBERS['0,4']).toBe(5);
-    expect(CELL_CLUE_NUMBERS['1,0']).toBe(6);
-    expect(CELL_CLUE_NUMBERS['4,0']).toBe(9);
-    expect(CELL_CLUE_NUMBERS['1,1']).toBeUndefined();
-  });
-
-  it('evaluates crossword completion status correctly', () => {
-    const puzzle = SAMPLE_PUZZLES[0];
+  it('creates empty 5x5 grid without template', () => {
     const emptyGrid = createEmptyCrosswordGrid();
-    expect(isCrosswordSolved(emptyGrid, puzzle.grid)).toBe(false);
+    expect(emptyGrid).toHaveLength(5);
+    for (let r = 0; r < 5; r++) {
+      expect(emptyGrid[r]).toHaveLength(5);
+      for (let c = 0; c < 5; c++) {
+        expect(emptyGrid[r][c]).toBe('');
+      }
+    }
+  });
 
-    // Partially filled grid
-    const partialGrid = createEmptyCrosswordGrid();
-    partialGrid[0] = [...puzzle.grid[0]];
-    expect(isCrosswordSolved(partialGrid, puzzle.grid)).toBe(false);
+  it('correctly verifies solved status ignoring blocker tiles', () => {
+    const sample = SAMPLE_PUZZLES[0];
+    const emptyGrid = createEmptyCrosswordGrid(sample.grid);
+    expect(isCrosswordSolved(emptyGrid, sample.grid)).toBe(false);
 
-    // Completely filled matching grid (case-insensitive)
-    const solvedGrid = puzzle.grid.map((row) => row.map((char) => char.toLowerCase()));
-    expect(isCrosswordSolved(solvedGrid, puzzle.grid)).toBe(true);
+    // Fill playable cells
+    const solvedUserGrid = sample.grid.map((row) =>
+      row.map((cell) => (cell === '#' ? '#' : cell.toLowerCase()))
+    );
+    expect(isCrosswordSolved(solvedUserGrid, sample.grid)).toBe(true);
 
-    // Completely filled but with wrong letter
-    const wrongGrid = puzzle.grid.map((row) => [...row]);
-    wrongGrid[4][4] = 'Z';
-    expect(isCrosswordSolved(wrongGrid, puzzle.grid)).toBe(false);
+    // Wrong letter in one playable cell
+    const wrongGrid = solvedUserGrid.map((row) => [...row]);
+    // find a playable cell
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (sample.grid[r][c] !== '#') {
+          wrongGrid[r][c] = wrongGrid[r][c] === 'Z' ? 'A' : 'Z';
+          expect(isCrosswordSolved(wrongGrid, sample.grid)).toBe(false);
+          return;
+        }
+      }
+    }
+  });
+
+  it('guarantees all sample puzzles have blockers and distinct words', () => {
+    for (const puzzle of SAMPLE_PUZZLES) {
+      // Check blockers exist
+      const blockerCount = puzzle.grid.flat().filter((cell) => cell === '#').length;
+      expect(blockerCount).toBeGreaterThanOrEqual(2);
+
+      const across = puzzle.acrossClues.map((c) => c.word);
+      const down = puzzle.downClues.map((c) => c.word);
+      const overlap = across.filter((w) => down.includes(w));
+      expect(overlap).toEqual([]);
+    }
+  });
+
+  it('computes dynamic numbering for grid with blockers', () => {
+    const sample = SAMPLE_PUZZLES[0]; // Autumn Harvest: [0,4] and [4,0] are '#'
+    const { gridNumbers, acrossSlots, downSlots } = calculateCrosswordNumbering(sample.grid);
+    expect(gridNumbers[0][0]).toBe(1);
+    expect(gridNumbers[0][4]).toBeNull();
+    expect(gridNumbers[4][0]).toBeNull();
+    expect(acrossSlots.length).toBe(5);
+    expect(downSlots.length).toBe(5);
   });
 });

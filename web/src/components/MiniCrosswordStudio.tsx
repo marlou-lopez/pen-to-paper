@@ -20,26 +20,42 @@ import {
   WorkflowRun,
 } from '../services/githubApi.ts';
 import {
-  CELL_CLUE_NUMBERS,
   PRESET_THEMES,
   SAMPLE_PUZZLES,
   createEmptyCrosswordGrid,
   isCrosswordSolved,
+  calculateCrosswordNumbering,
+  CrosswordClueData,
 } from '../utils/crossword.ts';
 
 export interface MiniCrosswordStudioProps {
   onOpenSettings: () => void;
 }
 
+function getFirstPlayableCell(grid: string[][]): [number, number] {
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      if (grid[r]?.[c] !== '#') return [r, c];
+    }
+  }
+  return [0, 0];
+}
+
 export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpenSettings }) => {
-  const [selectedCell, setSelectedCell] = useState<[number, number] | null>([0, 0]);
-  const [direction, setDirection] = useState<'across' | 'down'>('across');
   const [sampleIndex, setSampleIndex] = useState(0);
+  const currentPuzzle = SAMPLE_PUZZLES[sampleIndex];
+
+  const [selectedCell, setSelectedCell] = useState<[number, number] | null>(() =>
+    getFirstPlayableCell(SAMPLE_PUZZLES[0].grid)
+  );
+  const [direction, setDirection] = useState<'across' | 'down'>('across');
   const [selectedPreset, setSelectedPreset] = useState<string>('Daily');
   const [customTheme, setCustomTheme] = useState<string>('');
 
   // Player grid and solution visibility (solutions hidden by default)
-  const [userGrid, setUserGrid] = useState<string[][]>(() => createEmptyCrosswordGrid());
+  const [userGrid, setUserGrid] = useState<string[][]>(() =>
+    createEmptyCrosswordGrid(SAMPLE_PUZZLES[0].grid)
+  );
   const [showSolution, setShowSolution] = useState(false);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,56 +68,76 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
   }>({ type: 'idle', text: '' });
 
   const activeTheme = customTheme.trim() ? customTheme.trim() : selectedPreset;
-  const currentPuzzle = SAMPLE_PUZZLES[sampleIndex];
+
+  // Dynamic numbering computation for current puzzle
+  const numbering = useMemo(
+    () => calculateCrosswordNumbering(currentPuzzle.grid),
+    [currentPuzzle]
+  );
+
+  const allClues = useMemo<CrosswordClueData[]>(() => {
+    return [...currentPuzzle.acrossClues, ...currentPuzzle.downClues];
+  }, [currentPuzzle]);
 
   // Check if player solved the puzzle
   const isSolved = useMemo(() => {
     return isCrosswordSolved(userGrid, currentPuzzle.grid);
   }, [userGrid, currentPuzzle]);
 
-  // Active clue computation
+  // Active clue computation based on selected cell and direction
   const activeClue = useMemo(() => {
     if (!selectedCell) return currentPuzzle.acrossClues[0];
     const [r, c] = selectedCell;
     if (direction === 'across') {
-      return currentPuzzle.acrossClues[r] || currentPuzzle.acrossClues[0];
+      const match = currentPuzzle.acrossClues.find(
+        (clue) => clue.startRow === r && c >= clue.startCol && c < clue.startCol + clue.length
+      );
+      if (match) return match;
+      const downMatch = currentPuzzle.downClues.find(
+        (clue) => clue.startCol === c && r >= clue.startRow && r < clue.startRow + clue.length
+      );
+      return downMatch || currentPuzzle.acrossClues[0];
     } else {
-      return currentPuzzle.downClues[c] || currentPuzzle.downClues[0];
+      const match = currentPuzzle.downClues.find(
+        (clue) => clue.startCol === c && r >= clue.startRow && r < clue.startRow + clue.length
+      );
+      if (match) return match;
+      const acrossMatch = currentPuzzle.acrossClues.find(
+        (clue) => clue.startRow === r && c >= clue.startCol && c < clue.startCol + clue.length
+      );
+      return acrossMatch || currentPuzzle.downClues[0];
     }
   }, [selectedCell, direction, currentPuzzle]);
 
   const activeClueIndex = useMemo(() => {
-    if (!selectedCell) return 0;
-    const [r, c] = selectedCell;
-    return direction === 'across' ? r : 5 + c;
-  }, [selectedCell, direction]);
+    const idx = allClues.findIndex(
+      (c) => c.number === activeClue.number && c.direction === activeClue.direction
+    );
+    return idx >= 0 ? idx : 0;
+  }, [allClues, activeClue]);
 
   const handlePrevClue = useCallback(() => {
-    const nextIndex = (activeClueIndex - 1 + 10) % 10;
-    if (nextIndex < 5) {
-      setDirection('across');
-      setSelectedCell([nextIndex, 0]);
-    } else {
-      setDirection('down');
-      setSelectedCell([0, nextIndex - 5]);
-    }
+    if (allClues.length === 0) return;
+    const prevIndex = (activeClueIndex - 1 + allClues.length) % allClues.length;
+    const target = allClues[prevIndex];
+    setDirection(target.direction);
+    setSelectedCell([target.startRow, target.startCol]);
     hiddenInputRef.current?.focus();
-  }, [activeClueIndex]);
+  }, [activeClueIndex, allClues]);
 
   const handleNextClue = useCallback(() => {
-    const nextIndex = (activeClueIndex + 1) % 10;
-    if (nextIndex < 5) {
-      setDirection('across');
-      setSelectedCell([nextIndex, 0]);
-    } else {
-      setDirection('down');
-      setSelectedCell([0, nextIndex - 5]);
-    }
+    if (allClues.length === 0) return;
+    const nextIndex = (activeClueIndex + 1) % allClues.length;
+    const target = allClues[nextIndex];
+    setDirection(target.direction);
+    setSelectedCell([target.startRow, target.startCol]);
     hiddenInputRef.current?.focus();
-  }, [activeClueIndex]);
+  }, [activeClueIndex, allClues]);
 
   // Toggle direction or select cell
   const handleCellClick = (r: number, c: number) => {
+    if (currentPuzzle.grid[r]?.[c] === '#') return;
+
     if (selectedCell && selectedCell[0] === r && selectedCell[1] === c) {
       setDirection((d) => (d === 'across' ? 'down' : 'across'));
     } else {
@@ -116,19 +152,21 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
   }, []);
 
   const handleCycleSample = () => {
-    setSampleIndex((prev) => (prev + 1) % SAMPLE_PUZZLES.length);
-    setUserGrid(createEmptyCrosswordGrid());
+    const nextIndex = (sampleIndex + 1) % SAMPLE_PUZZLES.length;
+    const nextPuzzle = SAMPLE_PUZZLES[nextIndex];
+    setSampleIndex(nextIndex);
+    setUserGrid(createEmptyCrosswordGrid(nextPuzzle.grid));
     setShowSolution(false);
-    setSelectedCell([0, 0]);
+    setSelectedCell(getFirstPlayableCell(nextPuzzle.grid));
     hiddenInputRef.current?.focus();
   };
 
   const handleClearGrid = useCallback(() => {
-    setUserGrid(createEmptyCrosswordGrid());
+    setUserGrid(createEmptyCrosswordGrid(currentPuzzle.grid));
     setShowSolution(false);
-    setSelectedCell([0, 0]);
+    setSelectedCell(getFirstPlayableCell(currentPuzzle.grid));
     hiddenInputRef.current?.focus();
-  }, []);
+  }, [currentPuzzle]);
 
   const handleSelectPreset = (preset: string) => {
     setSelectedPreset(preset);
@@ -140,6 +178,8 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
     (char: string) => {
       if (!selectedCell) return;
       const [r, c] = selectedCell;
+      if (currentPuzzle.grid[r]?.[c] === '#') return;
+
       const upper = char.toUpperCase();
       if (!/^[A-Z]$/.test(upper)) return;
 
@@ -149,23 +189,34 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
         return next;
       });
 
-      // Auto-advance cursor in current direction
+      // Auto-advance cursor in current direction to next playable cell in current word
       if (direction === 'across') {
-        if (c < 4) {
-          setSelectedCell([r, c + 1]);
+        const wordEndCol = activeClue.startCol + activeClue.length;
+        let nextCol = c + 1;
+        while (nextCol < wordEndCol && currentPuzzle.grid[r]?.[nextCol] === '#') {
+          nextCol++;
+        }
+        if (nextCol < wordEndCol && currentPuzzle.grid[r]?.[nextCol] !== '#') {
+          setSelectedCell([r, nextCol]);
         }
       } else {
-        if (r < 4) {
-          setSelectedCell([r + 1, c]);
+        const wordEndRow = activeClue.startRow + activeClue.length;
+        let nextRow = r + 1;
+        while (nextRow < wordEndRow && currentPuzzle.grid[nextRow]?.[c] === '#') {
+          nextRow++;
+        }
+        if (nextRow < wordEndRow && currentPuzzle.grid[nextRow]?.[c] !== '#') {
+          setSelectedCell([nextRow, c]);
         }
       }
     },
-    [selectedCell, direction]
+    [selectedCell, direction, activeClue, currentPuzzle]
   );
 
   const handleBackspace = useCallback(() => {
     if (!selectedCell) return;
     const [r, c] = selectedCell;
+    if (currentPuzzle.grid[r]?.[c] === '#') return;
 
     setUserGrid((prev) => {
       const currentVal = prev[r]?.[c] || '';
@@ -176,17 +227,29 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
         return next;
       }
 
-      // If current cell was already empty, move backward and clear previous cell
-      if (direction === 'across' && c > 0) {
-        next[r][c - 1] = '';
-        setSelectedCell([r, c - 1]);
-      } else if (direction === 'down' && r > 0) {
-        next[r - 1][c] = '';
-        setSelectedCell([r - 1, c]);
+      // If current cell was already empty, move backward in current word and clear previous cell
+      if (direction === 'across') {
+        let prevCol = c - 1;
+        while (prevCol >= activeClue.startCol && currentPuzzle.grid[r]?.[prevCol] === '#') {
+          prevCol--;
+        }
+        if (prevCol >= activeClue.startCol && currentPuzzle.grid[r]?.[prevCol] !== '#') {
+          next[r][prevCol] = '';
+          setSelectedCell([r, prevCol]);
+        }
+      } else {
+        let prevRow = r - 1;
+        while (prevRow >= activeClue.startRow && currentPuzzle.grid[prevRow]?.[c] === '#') {
+          prevRow--;
+        }
+        if (prevRow >= activeClue.startRow && currentPuzzle.grid[prevRow]?.[c] !== '#') {
+          next[prevRow][c] = '';
+          setSelectedCell([prevRow, c]);
+        }
       }
       return next;
     });
-  }, [selectedCell, direction]);
+  }, [selectedCell, direction, activeClue, currentPuzzle]);
 
   // Keyboard navigation & entry
   useEffect(() => {
@@ -203,16 +266,44 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
         handleToggleDirection();
       } else if (e.key === 'ArrowRight' && selectedCell) {
         e.preventDefault();
-        setSelectedCell([selectedCell[0], Math.min(4, selectedCell[1] + 1)]);
+        const [r, c] = selectedCell;
+        let nextCol = c + 1;
+        while (nextCol < 5 && currentPuzzle.grid[r]?.[nextCol] === '#') {
+          nextCol++;
+        }
+        if (nextCol < 5 && currentPuzzle.grid[r]?.[nextCol] !== '#') {
+          setSelectedCell([r, nextCol]);
+        }
       } else if (e.key === 'ArrowLeft' && selectedCell) {
         e.preventDefault();
-        setSelectedCell([selectedCell[0], Math.max(0, selectedCell[1] - 1)]);
+        const [r, c] = selectedCell;
+        let prevCol = c - 1;
+        while (prevCol >= 0 && currentPuzzle.grid[r]?.[prevCol] === '#') {
+          prevCol--;
+        }
+        if (prevCol >= 0 && currentPuzzle.grid[r]?.[prevCol] !== '#') {
+          setSelectedCell([r, prevCol]);
+        }
       } else if (e.key === 'ArrowDown' && selectedCell) {
         e.preventDefault();
-        setSelectedCell([Math.min(4, selectedCell[0] + 1), selectedCell[1]]);
+        const [r, c] = selectedCell;
+        let nextRow = r + 1;
+        while (nextRow < 5 && currentPuzzle.grid[nextRow]?.[c] === '#') {
+          nextRow++;
+        }
+        if (nextRow < 5 && currentPuzzle.grid[nextRow]?.[c] !== '#') {
+          setSelectedCell([nextRow, c]);
+        }
       } else if (e.key === 'ArrowUp' && selectedCell) {
         e.preventDefault();
-        setSelectedCell([Math.max(0, selectedCell[0] - 1), selectedCell[1]]);
+        const [r, c] = selectedCell;
+        let prevRow = r - 1;
+        while (prevRow >= 0 && currentPuzzle.grid[prevRow]?.[c] === '#') {
+          prevRow--;
+        }
+        if (prevRow >= 0 && currentPuzzle.grid[prevRow]?.[c] !== '#') {
+          setSelectedCell([prevRow, c]);
+        }
       } else if (e.key === 'Tab') {
         e.preventDefault();
         if (e.shiftKey) {
@@ -227,11 +318,13 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
         e.preventDefault();
         if (selectedCell) {
           const [r, c] = selectedCell;
-          setUserGrid((prev) => {
-            const next = prev.map((row) => [...row]);
-            next[r][c] = '';
-            return next;
-          });
+          if (currentPuzzle.grid[r]?.[c] !== '#') {
+            setUserGrid((prev) => {
+              const next = prev.map((row) => [...row]);
+              next[r][c] = '';
+              return next;
+            });
+          }
         }
       } else if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
         e.preventDefault();
@@ -243,6 +336,7 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     selectedCell,
+    currentPuzzle,
     handlePrevClue,
     handleNextClue,
     handleToggleDirection,
@@ -270,7 +364,7 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
     const themeParam = activeTheme.toLowerCase() === 'daily' ? '' : activeTheme;
 
     setStatusMessage({
-      type: 'running',
+        type: 'running',
       text: `Dispatching "${activeTheme}" Mini Crossword...`,
       detail: `Connecting to ${repo} GitHub Actions...`,
     });
@@ -438,11 +532,28 @@ export const MiniCrosswordStudio: React.FC<MiniCrosswordStudioProps> = ({ onOpen
             <div className="grid grid-cols-5 bg-gray-900 gap-[1px]">
               {currentPuzzle.grid.map((row, r) =>
                 row.map((solutionChar, c) => {
+                  if (solutionChar === '#') {
+                    return (
+                      <div
+                        key={`${r}-${c}`}
+                        className="w-14 h-14 min-[380px]:w-16 min-[380px]:h-16 relative flex items-center justify-center bg-stone-900 border-stone-800 pointer-events-none cursor-default select-none"
+                        aria-hidden="true"
+                      />
+                    );
+                  }
+
                   const isSelected = selectedCell && selectedCell[0] === r && selectedCell[1] === c;
                   const isSameWord =
                     selectedCell &&
-                    (direction === 'across' ? selectedCell[0] === r : selectedCell[1] === c);
-                  const clueNum = CELL_CLUE_NUMBERS[`${r},${c}`];
+                    (direction === 'across'
+                      ? r === activeClue.startRow &&
+                        c >= activeClue.startCol &&
+                        c < activeClue.startCol + activeClue.length
+                      : c === activeClue.startCol &&
+                        r >= activeClue.startRow &&
+                        r < activeClue.startRow + activeClue.length);
+
+                  const clueNum = numbering.gridNumbers[r]?.[c];
                   const userChar = userGrid[r]?.[c] || '';
                   const displayChar = showSolution ? solutionChar : userChar;
 
