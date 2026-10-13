@@ -1,4 +1,4 @@
-export type PuzzleType = 'word-search' | 'sudoku' | 'mini-crossword' | 'kenken' | 'kakuro';
+export type PuzzleType = 'word-search' | 'sudoku' | 'mini-crossword' | 'kenken' | 'kakuro' | 'futoshiki';
 
 export interface PuzzleMetadata {
   id: string;

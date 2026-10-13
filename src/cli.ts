@@ -58,6 +58,15 @@ export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
     if (options.difficulty === 'random') {
       options.difficulty = 'medium';
     }
+  } else if (options.type === 'futoshiki') {
+    if (options.size === undefined) {
+      options.size = 5;
+    } else {
+      options.size = Math.max(4, Math.min(6, options.size));
+    }
+    if (options.difficulty === 'random') {
+      options.difficulty = 'medium';
+    }
   }
 
   return options;

@@ -16,6 +16,7 @@ export class LocalDeliveryClient implements DeliveryClient {
     await fs.mkdir(path.join(this.baseDir, 'Puzzles/Archive/Mini Crossword'), { recursive: true });
     await fs.mkdir(path.join(this.baseDir, 'Puzzles/Archive/KenKen'), { recursive: true });
     await fs.mkdir(path.join(this.baseDir, 'Puzzles/Archive/Kakuro'), { recursive: true });
+    await fs.mkdir(path.join(this.baseDir, 'Puzzles/Archive/Futoshiki'), { recursive: true });
 
     const filePath = path.join(fullDirPath, filename);
     await fs.writeFile(filePath, buffer);

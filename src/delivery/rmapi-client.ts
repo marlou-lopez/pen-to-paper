@@ -102,6 +102,7 @@ export class RmapiDeliveryClient implements DeliveryClient {
         '/Puzzles/Archive/Mini Crossword',
         '/Puzzles/Archive/KenKen',
         '/Puzzles/Archive/Kakuro',
+        '/Puzzles/Archive/Futoshiki',
       ];
       for (const archivePath of archiveFolders) {
         this.ensureFolder(archivePath);

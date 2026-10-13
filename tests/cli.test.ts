@@ -43,18 +43,35 @@ describe('Orchestrator runGenerator', () => {
     expect(dailyRes[0].destinationFolder).toBe('/Puzzles/Daily');
   });
 
-  it('generates word-search, sudoku, mini-crossword, kenken, and kakuro when type is all', async () => {
+  it('filters by futoshiki puzzle type when specified with custom size and difficulty', async () => {
+    const result = await orchestrator.runGenerator({ type: 'futoshiki', size: 4, difficulty: 'hard', local: true });
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('futoshiki');
+    expect(result[0].puzzleData.size).toBe(4);
+    expect(result[0].puzzleData.difficulty).toBe('hard');
+  });
+
+  it('routes futoshiki to /Puzzles/Futoshiki by default and /Puzzles/Daily when daily option is true', async () => {
+    const defaultRes = await orchestrator.runGenerator({ type: 'futoshiki', local: true });
+    expect(defaultRes[0].destinationFolder).toBe('/Puzzles/Futoshiki');
+
+    const dailyRes = await orchestrator.runGenerator({ type: 'futoshiki', daily: true, local: true });
+    expect(dailyRes[0].destinationFolder).toBe('/Puzzles/Daily');
+  });
+
+  it('generates word-search, sudoku, mini-crossword, kenken, kakuro, and futoshiki when type is all', async () => {
     const result = await orchestrator.runGenerator({ type: 'all', local: true });
-    expect(result).toHaveLength(5);
+    expect(result).toHaveLength(6);
     const types = result.map((r: any) => r.type);
     expect(types).toContain('word-search');
     expect(types).toContain('sudoku');
     expect(types).toContain('mini-crossword');
     expect(types).toContain('kenken');
     expect(types).toContain('kakuro');
+    expect(types).toContain('futoshiki');
   });
 
-  it('generates word-search, sudoku, mini-crossword, kenken, and kakuro puzzles in local mode when type is all', async () => {
+  it('generates word-search, sudoku, mini-crossword, kenken, kakuro, and futoshiki puzzles in local mode when type is all', async () => {
     const results = await runGenerator({
       type: 'all',
       difficulty: 'medium',
@@ -63,8 +80,8 @@ describe('Orchestrator runGenerator', () => {
       outputDir: './test-cli-output',
     });
 
-    expect(results).toHaveLength(5);
-    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku', 'mini-crossword', 'kenken', 'kakuro']);
+    expect(results).toHaveLength(6);
+    expect(results.map((r) => r.puzzle.metadata.id)).toEqual(['word-search', 'sudoku', 'mini-crossword', 'kenken', 'kakuro', 'futoshiki']);
     expect(results[0].deliveredPath).toContain('test-cli-output');
   });
 
@@ -216,5 +233,24 @@ describe('CLI parseArgs', () => {
     expect(options.type).toBe('kakuro');
     expect(options.size).toBe(10);
     expect(options.difficulty).toBe('hard');
+  });
+
+  it('parses --type=futoshiki and defaults size to 5 and difficulty to medium', () => {
+    const options = parseArgs(['--type=futoshiki']);
+    expect(options.type).toBe('futoshiki');
+    expect(options.size).toBe(5);
+    expect(options.difficulty).toBe('medium');
+  });
+
+  it('parses --size and clamps to 4, 5, or 6 for futoshiki', () => {
+    const clampedLow = parseArgs(['--type=futoshiki', '--size=2']);
+    expect(clampedLow.size).toBe(4);
+
+    const clampedHigh = parseArgs(['--type=futoshiki', '--size=9']);
+    expect(clampedHigh.size).toBe(6);
+
+    const normal = parseArgs(['--type=futoshiki', '--size=5', '--difficulty=hard']);
+    expect(normal.size).toBe(5);
+    expect(normal.difficulty).toBe('hard');
   });
 });

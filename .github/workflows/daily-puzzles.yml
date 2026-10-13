@@ -18,6 +18,7 @@ on:
           - mini-crossword
           - kenken
           - kakuro
+          - futoshiki
       sudoku_difficulty:
         description: 'Sudoku difficulty'
         required: true
@@ -67,6 +68,24 @@ on:
           - '10'
       kakuro_difficulty:
         description: 'Kakuro difficulty'
+        required: false
+        default: 'medium'
+        type: choice
+        options:
+          - easy
+          - medium
+          - hard
+      futoshiki_size:
+        description: 'Futoshiki grid size (4, 5, 6)'
+        required: false
+        default: '5'
+        type: choice
+        options:
+          - '4'
+          - '5'
+          - '6'
+      futoshiki_difficulty:
+        description: 'Futoshiki difficulty'
         required: false
         default: 'medium'
         type: choice
@@ -137,6 +156,8 @@ jobs:
           KENKEN_DIFF: ${{ inputs.kenken_difficulty || 'medium' }}
           KAKURO_SIZE: ${{ inputs.kakuro_size || '8' }}
           KAKURO_DIFF: ${{ inputs.kakuro_difficulty || 'medium' }}
+          FUTOSHIKI_SIZE: ${{ inputs.futoshiki_size || '5' }}
+          FUTOSHIKI_DIFF: ${{ inputs.futoshiki_difficulty || 'medium' }}
           IS_DAILY: ${{ inputs.is_daily }}
         run: |
           THEME_FLAG=""
@@ -156,6 +177,8 @@ jobs:
             DIFF_FLAG="--difficulty=$KENKEN_DIFF"
           elif [ "$PUZZLE_TYPE" = "kakuro" ]; then
             DIFF_FLAG="--difficulty=$KAKURO_DIFF"
+          elif [ "$PUZZLE_TYPE" = "futoshiki" ]; then
+            DIFF_FLAG="--difficulty=$FUTOSHIKI_DIFF"
           else
             DIFF_FLAG="--difficulty=$SUDOKU_DIFF"
           fi
@@ -165,6 +188,8 @@ jobs:
             SIZE_FLAG="--size=$KAKURO_SIZE"
           elif [ "$PUZZLE_TYPE" = "kenken" ]; then
             SIZE_FLAG="--size=$KENKEN_SIZE"
+          elif [ "$PUZZLE_TYPE" = "futoshiki" ]; then
+            SIZE_FLAG="--size=$FUTOSHIKI_SIZE"
           fi
 
           DAILY_FLAG=""

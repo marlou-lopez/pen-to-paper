@@ -4,6 +4,7 @@ import { SudokuGenerator } from './puzzles/sudoku/index.js';
 import { MiniCrosswordGenerator } from './puzzles/mini-crossword/index.js';
 import { KenKenGenerator } from './puzzles/kenken/index.js';
 import { KakuroGenerator } from './puzzles/kakuro/index.js';
+import { FutoshikiGenerator } from './puzzles/futoshiki/index.js';
 import { LocalDeliveryClient } from './delivery/local-client.js';
 import { RmapiDeliveryClient } from './delivery/rmapi-client.js';
 import { DeliveryClient } from './delivery/types.js';
@@ -11,6 +12,7 @@ import { GeneratedPuzzle, PuzzleType } from './core/types.js';
 
 export * from './puzzles/kenken/index.js';
 export * from './puzzles/kakuro/index.js';
+export * from './puzzles/futoshiki/index.js';
 
 export interface RunOptions {
   type?: 'all' | PuzzleType;
