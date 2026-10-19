@@ -11,7 +11,7 @@ An automated daily puzzle generator producing e-ink formatted 3-page PDFs for th
 - **Futoshiki (Inequality Latin Square)**: 4x4, 5x5, and 6x6 inequality Latin squares (default 5x5) with arithmetic comparison clues (<, >), non-repeating digits (1-N), and guaranteed unique solutions.
 - **E-Ink Optimized Layout**: 1404x1872 pt (3:4 aspect ratio) with high-contrast monochrome design and generous margins.
 - **3-Page Structure**: Page 1 (The Puzzle), Page 2 (Spoiler Blocker), Page 3 (The Answer Key).
-- **Daily Inbox & Archive Workflow**: Automated daily puzzles arrive fresh in `/Puzzles/Daily/`. Solved puzzles can be moved into pre-created `/Puzzles/Archive/` folders.
+- **Daily Inbox & Automated Lifecycle Workflow**: Automated daily puzzles arrive fresh in `/Puzzles/Daily/`. Completed puzzles tagged with `DONE` are automatically archived to `/Puzzles/Archive/<Category>/`, and stale uncompleted dailies (> 2 days) are automatically swept to category folders.
 - **Dual Trigger**: Daily GitHub Actions schedule + On-Demand Android HTTP webhook.
 - **Mobile PWA Studio**: Touch-friendly web app on GitHub Pages with visual 9x9 Sudoku grid, conflict validation, and 1-tap tablet delivery.
 
@@ -54,11 +54,19 @@ Automated puzzles are delivered to a daily inbox so you always know what's fresh
     └── Futoshiki/
 ```
 
+**Automated Puzzle Lifecycle**:
+- **Automated Archiving (`DONE` Tag)**: Tagging any puzzle with `DONE` (case-insensitive: `DONE`, `Done`, `done`) or prefixing `[DONE]` in title moves it to `/Puzzles/Archive/<Category>/`.
+- **Daily Inbox Sweeping**: Uncompleted puzzles in `/Puzzles/Daily` older than 2 calendar days are automatically swept to their category folder (`/Puzzles/<Category>/`).
+- **Automated Workflows**:
+  - **Scheduled Cleanup Workflow** (`.github/workflows/cleanup-puzzles.yml`): Runs daily at 20:00 UTC (1 hour before daily generation) to tidy and archive tablet puzzles.
+  - **Daily Generation Pre-step** (`.github/workflows/daily-puzzles.yml`): Runs `npm run cleanup -- --upload --days=2` automatically right before daily puzzle generation at 21:00 UTC.
+
 **Daily Workflow**:
 1. Every morning, new puzzles arrive in `/Puzzles/Daily/`.
 2. Solve the puzzles on your reMarkable tablet.
-3. Move completed puzzles to `/Puzzles/Archive/Word Search/`, `/Puzzles/Archive/Sudoku/`, `/Puzzles/Archive/Mini Crossword/`, `/Puzzles/Archive/KenKen/`, `/Puzzles/Archive/Kakuro/`, or `/Puzzles/Archive/Futoshiki/` to keep your inbox clean.
-4. On-demand manual generations deliver directly to their category folders (`/Puzzles/Word Search/`, `/Puzzles/Sudoku/`, `/Puzzles/Mini Crossword/`, `/Puzzles/KenKen/`, `/Puzzles/Kakuro/`, `/Puzzles/Futoshiki/`) by default, or to `/Puzzles/Daily/` when `--daily` is specified.
+3. Simply tag completed puzzles with `DONE` on your tablet (or prefix `[DONE]` in the title) — the automated lifecycle workflow will move them to `/Puzzles/Archive/<Category>/`.
+4. Any uncompleted puzzles remaining in `/Puzzles/Daily/` after 2 calendar days are swept to `/Puzzles/<Category>/` so your morning inbox never gets cluttered.
+5. On-demand manual generations deliver directly to their category folders (`/Puzzles/Word Search/`, `/Puzzles/Sudoku/`, `/Puzzles/Mini Crossword/`, `/Puzzles/KenKen/`, `/Puzzles/Kakuro/`, `/Puzzles/Futoshiki/`) by default, or to `/Puzzles/Daily/` when `--daily` is specified.
 
 ## Local Development & CLI Usage
 
@@ -92,9 +100,23 @@ npm run generate -- --type=sudoku --folder="/Puzzles/Custom"
 
 # Generate and upload to tablet:
 npm run generate -- --daily --upload
+
+# --- Puzzle Lifecycle & Cleanup ---
+
+# Preview planned moves locally or remotely without touching files:
+npm run cleanup -- --dry-run
+npm run cleanup -- --upload --dry-run
+
+# Run cleanup on remote reMarkable tablet (retention: 2 days):
+npm run cleanup -- --upload --days=2
+
+# Run cleanup on local output directory:
+npm run cleanup -- --local --days=2
 ```
 
 ### CLI Options
+
+#### Generation Options
 - `--type=<type>`: Puzzle type to generate (`all`, `word-search`, `sudoku`, `mini-crossword`, `kenken`, `kakuro`, `futoshiki`). Default: `all`.
 - `--size=<N>`: Grid size (KenKen: 3 to 9, default `6`; Kakuro: 6, 8, 10, default `8`; Futoshiki: 4, 5, 6, default `5`).
 - `--difficulty=<diff>`: Difficulty setting (`easy`, `medium`, `hard` for KenKen, Kakuro, and Futoshiki; `random`, `easy`, `medium`, `hard`, `expert` for Sudoku). Default: `random`.
@@ -103,6 +125,13 @@ npm run generate -- --daily --upload
 - `--daily`: Route puzzles to the `/Puzzles/Daily` inbox folder.
 - `--folder=<path>`: Custom folder destination override (takes precedence over `--daily`).
 - `--upload`: Upload directly to reMarkable via `rmapi` instead of local storage.
+
+#### Cleanup Options
+- `--cleanup`: Run the puzzle lifecycle cleanup engine (archiving and daily inbox sweeping).
+- `--days=<N>`: Retention days for `/Puzzles/Daily` inbox before sweeping uncompleted puzzles to category folders (default: `2`).
+- `--dry-run`: Preview planned file moves without moving or renaming files.
+- `--local`: Run cleanup on local filesystem (`./output` or `--dest=<path>`).
+- `--upload`: Run cleanup on remote reMarkable tablet via `rmapi`.
 
 ## Cloud Setup (reMarkable)
 1. Generate an authentication code at [my.remarkable.com/device/desktop/connect](https://my.remarkable.com/device/desktop/connect).

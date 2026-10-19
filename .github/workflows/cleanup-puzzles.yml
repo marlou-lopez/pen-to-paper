@@ -1,0 +1,62 @@
+name: Tidy & Archive reMarkable Puzzles
+
+on:
+  schedule:
+    # Runs at 20:00 UTC every day (1 hour before 21:00 UTC daily generation)
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: 'Days to retain uncompleted puzzles in Daily inbox'
+        required: false
+        default: '2'
+        type: string
+      dry_run:
+        description: 'Preview actions without moving files'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      RMAPI_AUTH_TOKEN: ${{ secrets.RMAPI_AUTH_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install rmapi
+        run: |
+          mkdir -p $HOME/bin
+          curl -L -s https://github.com/ddvk/rmapi/releases/download/v0.0.35/rmapi-linux-amd64.tar.gz | tar xz -C $HOME/bin
+          chmod +x $HOME/bin/rmapi
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Setup rmapi auth
+        run: |
+          if [ -n "$RMAPI_AUTH_TOKEN" ]; then
+            mkdir -p ~/.config/rmapi
+            echo "$RMAPI_AUTH_TOKEN" > ~/.rmapi
+            echo "$RMAPI_AUTH_TOKEN" > ~/.config/rmapi/rmapi.conf
+            echo "rmapi credentials configured."
+          else
+            echo "RMAPI_AUTH_TOKEN not provided; skipping auth setup."
+          fi
+
+      - name: Run puzzle cleanup
+        run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          npm run cleanup -- --upload --days=${{ inputs.retention_days || 2 }} $DRY_RUN_FLAG

@@ -145,6 +145,9 @@ jobs:
             echo "RMAPI_AUTH_TOKEN not provided; skipping auth setup."
           fi
 
+      - name: Tidy completed and stale puzzles
+        run: npm run cleanup -- --upload --days=2
+
       - name: Run puzzle generation & upload
         env:
           THEME_PARAM: ${{ inputs.word_search_theme }}
