@@ -116,6 +116,7 @@ export async function runCleanup(options: RunOptions = {}): Promise<CleanupSumma
     client,
     retentionDays: options.days ?? 2,
     dryRun: options.dryRun ?? false,
+    referenceDate: options.date,
   });
 }
 

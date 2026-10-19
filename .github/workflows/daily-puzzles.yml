@@ -146,6 +146,7 @@ jobs:
           fi
 
       - name: Tidy completed and stale puzzles
+        continue-on-error: true
         run: npm run cleanup -- --upload --days=2
 
       - name: Run puzzle generation & upload

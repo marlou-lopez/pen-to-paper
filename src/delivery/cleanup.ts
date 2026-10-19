@@ -21,12 +21,12 @@ export interface CleanupSummary {
 
 export function getPuzzleCategory(name: string): string {
   const clean = name.replace(/^\[DONE\]\s*/i, '');
-  if (/^WordSearch_/i.test(clean)) return 'Word Search';
-  if (/^Sudoku_/i.test(clean)) return 'Sudoku';
-  if (/^MiniCrossword_/i.test(clean)) return 'Mini Crossword';
-  if (/^KenKen_/i.test(clean)) return 'KenKen';
-  if (/^Kakuro_/i.test(clean)) return 'Kakuro';
-  if (/^Futoshiki_/i.test(clean)) return 'Futoshiki';
+  if (/^Word[_\s-]?Search[_\s-]/i.test(clean)) return 'Word Search';
+  if (/^Sudoku[_\s-]/i.test(clean)) return 'Sudoku';
+  if (/^Mini[_\s-]?Crossword[_\s-]/i.test(clean)) return 'Mini Crossword';
+  if (/^KenKen[_\s-]/i.test(clean)) return 'KenKen';
+  if (/^Kakuro[_\s-]/i.test(clean)) return 'Kakuro';
+  if (/^Futoshiki[_\s-]/i.test(clean)) return 'Futoshiki';
   return 'Other';
 }
 
@@ -124,7 +124,8 @@ export async function cleanupPuzzles(options: CleanupOptions): Promise<CleanupSu
         summary.skipped.push({ name: doc.name, reason: `Move failed: ${err?.message ?? err}` });
       }
     } else {
-      summary.skipped.push({ name: doc.name, reason: 'Within retention window' });
+      const reason = extractPuzzleDate(doc.name) ? 'Within retention window' : 'No date in filename';
+      summary.skipped.push({ name: doc.name, reason });
     }
   }
 
