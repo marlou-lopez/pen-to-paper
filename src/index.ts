@@ -7,12 +7,14 @@ import { KakuroGenerator } from './puzzles/kakuro/index.js';
 import { FutoshikiGenerator } from './puzzles/futoshiki/index.js';
 import { LocalDeliveryClient } from './delivery/local-client.js';
 import { RmapiDeliveryClient } from './delivery/rmapi-client.js';
-import { DeliveryClient } from './delivery/types.js';
+import { DeliveryClient, CleanupClient } from './delivery/types.js';
 import { GeneratedPuzzle, PuzzleType } from './core/types.js';
+import { cleanupPuzzles, CleanupSummary } from './delivery/cleanup.js';
 
 export * from './puzzles/kenken/index.js';
 export * from './puzzles/kakuro/index.js';
 export * from './puzzles/futoshiki/index.js';
+export * from './delivery/cleanup.js';
 
 export interface RunOptions {
   type?: 'all' | PuzzleType;
@@ -26,6 +28,9 @@ export interface RunOptions {
   grid?: string;
   size?: number;
   local?: boolean;
+  cleanup?: boolean;
+  days?: number;
+  dryRun?: boolean;
 }
 
 export interface GeneratedResult<TData = any> {
@@ -96,7 +101,27 @@ export async function runGenerator(options: RunOptions = {}): Promise<GeneratedR
   return results;
 }
 
+export async function runCleanup(options: RunOptions = {}): Promise<CleanupSummary> {
+  const rmapi = new RmapiDeliveryClient();
+  const rmapiAvailable = rmapi.isAvailable();
+  if (options.upload && !rmapiAvailable) {
+    console.warn('[WARN] --upload requested but rmapi is not available on PATH; falling back to local delivery.');
+  }
+  const useRmapi = Boolean(!options.local && options.upload && rmapiAvailable);
+  const client: CleanupClient = useRmapi
+    ? rmapi
+    : new LocalDeliveryClient(options.outputDir || './output');
+
+  return cleanupPuzzles({
+    client,
+    retentionDays: options.days ?? 2,
+    dryRun: options.dryRun ?? false,
+  });
+}
+
 export const orchestrator = {
   runGenerator,
+  runCleanup,
   createRegistry,
 };
+

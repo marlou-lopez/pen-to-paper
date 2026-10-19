@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runGenerator, RunOptions } from './index.js';
+import { runGenerator, runCleanup, RunOptions } from './index.js';
 
 export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
   const options: RunOptions = {
@@ -9,7 +9,16 @@ export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
   };
 
   for (const arg of args) {
-    if (arg.startsWith('--type=')) {
+    if (arg === '--cleanup' || arg === 'cleanup') {
+      options.cleanup = true;
+    } else if (arg.startsWith('--days=')) {
+      const parsedDays = parseInt(arg.slice(arg.indexOf('=') + 1), 10);
+      options.days = Math.max(1, isNaN(parsedDays) ? 2 : parsedDays);
+    } else if (arg === '--dry-run') {
+      options.dryRun = true;
+    } else if (arg === '--local') {
+      options.local = true;
+    } else if (arg.startsWith('--type=')) {
       options.type = arg.slice(arg.indexOf('=') + 1) as RunOptions['type'];
     } else if (arg.startsWith('--difficulty=')) {
       options.difficulty = arg.slice(arg.indexOf('=') + 1);
@@ -72,8 +81,22 @@ export function parseArgs(args: string[] = process.argv.slice(2)): RunOptions {
   return options;
 }
 
-async function main() {
+export async function main() {
   const options = parseArgs();
+
+  if (options.cleanup) {
+    console.log(`--- Pen to Paper Puzzle Lifecycle Cleanup ---`);
+    console.log(`Client: ${options.upload ? 'reMarkable (rmapi)' : 'Local Storage'} | Retention: ${options.days ?? 2} days | Dry Run: ${Boolean(options.dryRun)}`);
+    try {
+      const summary = await runCleanup(options);
+      console.log(`Cleanup complete: ${summary.archived.length} archived, ${summary.staleMoved.length} stale dailies moved.`);
+    } catch (err: any) {
+      console.error('Error running cleanup:', err.message);
+      process.exit(1);
+    }
+    return;
+  }
+
   console.log(`--- Pen to Paper Daily Puzzle Generator ---`);
   console.log(`Type: ${options.type || 'all'} | Difficulty: ${options.difficulty || 'auto'} | Daily: ${Boolean(options.daily)} | Upload: ${Boolean(options.upload)}`);
 
@@ -89,4 +112,7 @@ async function main() {
   }
 }
 
-main();
+if (process.argv[1] && (process.argv[1].endsWith('cli.ts') || process.argv[1].endsWith('cli.js') || process.argv[1].endsWith('cli'))) {
+  main();
+}
+

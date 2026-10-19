@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll, vi } from 'vitest';
 import fs from 'fs/promises';
-import { runGenerator } from '../src/index';
+import { runGenerator, runCleanup, orchestrator as exportedOrchestrator } from '../src/index';
 import { parseArgs } from '../src/cli';
 import { RmapiDeliveryClient } from '../src/delivery/rmapi-client';
 
@@ -253,4 +253,98 @@ describe('CLI parseArgs', () => {
     expect(normal.size).toBe(5);
     expect(normal.difficulty).toBe('hard');
   });
+
+  it('parses --cleanup and sets options.cleanup = true', () => {
+    const options = parseArgs(['--cleanup']);
+    expect(options.cleanup).toBe(true);
+  });
+
+  it('parses cleanup subcommand and flags', () => {
+    const options = parseArgs(['cleanup', '--days=3', '--dry-run', '--local']);
+    expect(options.cleanup).toBe(true);
+    expect(options.days).toBe(3);
+    expect(options.dryRun).toBe(true);
+    expect(options.local).toBe(true);
+  });
+
+  it('clamps --days=0 or --days=-1 to minimum 1', () => {
+    const optionsZero = parseArgs(['--cleanup', '--days=0']);
+    expect(optionsZero.days).toBe(1);
+
+    const optionsNegative = parseArgs(['--cleanup', '--days=-1']);
+    expect(optionsNegative.days).toBe(1);
+  });
+
+  it('defaults --days to 2 if not a valid number', () => {
+    const optionsInvalid = parseArgs(['--cleanup', '--days=abc']);
+    expect(optionsInvalid.days).toBe(2);
+  });
 });
+
+describe('Orchestrator runCleanup', () => {
+  const testDir = './test-cli-cleanup';
+
+  afterAll(async () => {
+    await fs.rm(testDir, { recursive: true, force: true });
+  });
+
+  it('executes cleanup in local mode with temporary output dir and returns CleanupSummary', async () => {
+    await fs.mkdir(`${testDir}/Puzzles/Daily`, { recursive: true });
+    await fs.mkdir(`${testDir}/Puzzles/Sudoku`, { recursive: true });
+    await fs.writeFile(`${testDir}/Puzzles/Daily/Sudoku_Medium_2026-10-01.pdf`, 'content');
+    await fs.writeFile(`${testDir}/Puzzles/Sudoku/[DONE] Sudoku_Easy_2026-10-18.pdf`, 'content');
+
+    const summary = await runCleanup({
+      local: true,
+      outputDir: testDir,
+      days: 2,
+    });
+
+    expect(summary).toBeDefined();
+    expect(summary.staleMoved).toHaveLength(1);
+    expect(summary.staleMoved[0].name).toBe('Sudoku_Medium_2026-10-01');
+    expect(summary.staleMoved[0].to).toBe('/Puzzles/Sudoku');
+    expect(summary.archived).toHaveLength(1);
+    expect(summary.archived[0].name).toBe('[DONE] Sudoku_Easy_2026-10-18');
+    expect(summary.archived[0].to).toBe('/Puzzles/Archive/Sudoku');
+  });
+
+  it('supports dry-run mode without moving files', async () => {
+    await fs.mkdir(`${testDir}/Puzzles/Daily`, { recursive: true });
+    await fs.writeFile(`${testDir}/Puzzles/Daily/Sudoku_Easy_2026-10-02.pdf`, 'content');
+
+    const summary = await runCleanup({
+      local: true,
+      outputDir: testDir,
+      days: 2,
+      dryRun: true,
+    });
+
+    expect(summary.staleMoved).toHaveLength(1);
+    const exists = await fs.stat(`${testDir}/Puzzles/Daily/Sudoku_Easy_2026-10-02.pdf`).then(() => true).catch(() => false);
+    expect(exists).toBe(true);
+  });
+
+  it('warns when upload is requested but rmapi is not available', async () => {
+    const isAvailableSpy = vi.spyOn(RmapiDeliveryClient.prototype, 'isAvailable').mockReturnValue(false);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const summary = await runCleanup({
+      upload: true,
+      outputDir: testDir,
+    });
+
+    expect(summary).toBeDefined();
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[WARN] --upload requested but rmapi is not available on PATH; falling back to local delivery.'
+    );
+
+    warnSpy.mockRestore();
+    isAvailableSpy.mockRestore();
+  });
+
+  it('is exported as orchestrator.runCleanup', () => {
+    expect(exportedOrchestrator.runCleanup).toBe(runCleanup);
+  });
+});
+
